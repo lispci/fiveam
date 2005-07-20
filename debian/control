@@ -1,0 +1,21 @@
+Source: fiveam
+Section: devel
+Priority: optional
+Maintainer: Luca Capello <luca@pca.it>
+Build-Depends: debhelper (>= 4.0.0)
+Standards-Version: 3.6.1
+
+Package: cl-fiveam
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, common-lisp-controller (>= 3.47), cl-asdf, cl-arnesi
+Suggests: latex
+Description: simple regression testing framework
+ FiveAM is a simple (as far as writing and running tests goes)
+ regression testing framework. It has been designed with Common
+ Lisp's interactive development model in mind.
+ .
+ Features:
+  * Test and test suite hierarchies allow test to be organized into
+    hierarchies to ease running
+  * Functions for re-running recently run tests.
+  * Inter-test dependencies.
