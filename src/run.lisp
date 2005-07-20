@@ -33,7 +33,7 @@
 ;;;; The functions RUN!, !, !! and !!! are convenient wrappers around
 ;;;; RUN and EXPLAIN.
 
-(defparameter *debug-on-error* t
+(defparameter *debug-on-error* nil
   "T if we should drop into a debugger on error, NIL otherwise.")
 
 (defun import-testing-symbols (package-designator)
