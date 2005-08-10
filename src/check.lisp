@@ -77,9 +77,11 @@ when appropiate."))
   initialize args MAKE-INSTANCE-ARGS and adds the resulting
   object to the list of test results."
   (with-run-state (result-list current-test)
-    (let ((result (apply #'make-instance result-type (append make-instance-args (list :test-case current-test)))))
+    (let ((result (apply #'make-instance result-type
+                         (append make-instance-args (list :test-case current-test)))))
       (etypecase result
 	(test-passed  (format *test-dribble* "."))
+        (unexpected-test-failure (format *test-dribble* "X"))
 	(test-failure (format *test-dribble* "f"))
 	(test-skipped (format *test-dribble* "s")))
       (push result result-list))))

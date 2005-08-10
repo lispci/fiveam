@@ -104,19 +104,6 @@ run."))
 	  (and (satisfies-depends-p #'every))
 	  (or  (satisfies-depends-p #'some))
 	  (not (satisfies-depends-p #'notany))))))
-    
-(defun handle-unexpected-error (test error)
-  "Handler for unexpected conditions raised during test
-  execution."
-  (when (not *debug-on-error*)
-    (format *test-dribble* "F")
-    (with-run-state (result-list)
-      (push (make-instance 'unexpected-test-failure
-			   :test-case test
-			   :reason (format nil "Unexpected Error: ~S." error)
-			   :condition test)
-	    result-list)
-      (throw 'run-block result-list))))
 
 (defun results-status (result-list)
   "Given a list of test results (generated while running a test)
@@ -136,23 +123,34 @@ run."))
 
 (defmethod run-test-lambda ((test test-case))
   (with-run-state (result-list)
-    (catch 'run-block
-      (bind-run-state ((current-test test))
-        (handler-bind ((error (lambda (e) (handle-unexpected-error test e))))
-	  (restart-case
-	      (let ((results (return-result-list (test-lambda test))))
-		(setf (status test) (results-status results)
-		      result-list (nconc result-list results)))
-	    (retest ()
-	      :report (lambda (stream)
-			(format stream "~@<Rerun the test ~S~@:>" test))
-	      (%run test))
-	    (ignore ()
-	      :report (lambda (stream)
-			(format stream "~@<Signal a test failure and abort the test ~S.~@:>" test))
-	      (push (make-instance 'test-failure :test-case test
-				   :reason "Failure restart.")
-		    result-list))))))))
+    (bind-run-state ((current-test test))
+      (labels ((abort-test (e)
+                 (add-result  'unexpected-test-failure
+                              :test-case test
+                              :reason (format nil "Unexpected Error: ~S." e)
+                              :condition e))
+               (run-it ()
+                 (let ((result-list '()))
+                   (declare (special result-list))
+                   (handler-bind ((error (lambda (e)
+                                           (unless *debug-on-error*
+                                             (abort-test e)
+                                             (return-from run-it result-list)))))
+                     (restart-case
+                         (funcall (test-lambda test))
+                       (retest ()
+                         :report (lambda (stream)
+                                   (format stream "~@<Rerun the test ~S~@:>" test))
+                         (return-from run-it (run-it)))
+                       (ignore ()
+                         :report (lambda (stream)
+                                   (format stream "~@<Signal a test failure and abort the test ~S.~@:>" test))
+                         (abort-test (make-instance 'test-failure :test-case test
+                                                    :reason "Failure restart."))))
+                     result-list))))
+        (let ((results (run-it)))
+          (setf (status test) (results-status results)
+                result-list (nconc result-list results)))))))
 
 (defgeneric %run (test-spec)
   (:documentation "Internal method for running a test. Does not
