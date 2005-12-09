@@ -33,7 +33,8 @@
 
 (defclass test-result ()
   ((reason :accessor reason :initarg :reason :initform "no reason given")
-   (test-case :accessor test-case :initarg :test-case))
+   (test-case :accessor test-case :initarg :test-case)
+   (test-expr :accessor test-expr :initarg :test-expr))
   (:documentation "All checking macros will generate an object of
  type TEST-RESULT."))
 
@@ -110,21 +111,22 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
           (test)
           "Argument to IS must be a list, not ~S" test)
   `(if ,test
-       (add-result 'test-passed)
+       (add-result 'test-passed :test-expr ',test)
        (add-result 'test-failure
-		  :reason ,(if (null reason-args)
-			       (list-match-case test
-			         ((not (?predicate ?expected ?actual))
-				  `(format nil "~S was ~S to ~S" ,?actual ',?predicate ,?expected))
-				 ((not (?satisfies ?value))
-				  `(format nil "~S satisfied ~S" ,?value ',?satisfies))
-				 ((?predicate ?expected ?actual)
-				  `(format nil "~S was not ~S to ~S" ,?actual ',?predicate ,?expected))
-				 ((?satisfies ?value)
-				  `(format nil "~S did not satisfy ~S" ,?value ',?satisfies))
-				 (t 
-				  `(is-true ,test ,@reason-args)))
-			     `(format nil ,@reason-args)))))
+                   :reason ,(if (null reason-args)
+                                (list-match-case test
+                                  ((not (?predicate ?expected ?actual))
+                                   `(format nil "~S was ~S to ~S" ,?actual ',?predicate ,?expected))
+                                  ((not (?satisfies ?value))
+                                   `(format nil "~S satisfied ~S" ,?value ',?satisfies))
+                                  ((?predicate ?expected ?actual)
+                                   `(format nil "~S was not ~S to ~S" ,?actual ',?predicate ,?expected))
+                                  ((?satisfies ?value)
+                                   `(format nil "~S did not satisfy ~S" ,?value ',?satisfies))
+                                  (t 
+                                   `(is-true ,test ,@reason-args)))
+                                `(format nil ,@reason-args))
+                  :test-expr ',test)))
 
 ;;;; *** Other checks
 
@@ -140,10 +142,11 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
   does not inspect CONDITION to determine how to report the
   failure."
   `(if ,condition
-       (add-result 'test-passed)
+       (add-result 'test-passed :test-expr ',condition)
        (add-result 'test-failure :reason ,(if reason-args
 					      `(format nil ,@reason-args)
-					      `(format nil "~S did not return a true value" ',condition)))))
+					      `(format nil "~S did not return a true value" ',condition))
+                   :test-expr ',condition)))
 
 (defmacro is-false (condition &rest reason-args)
   "Generates a pass if CONDITION returns false, generates a
@@ -153,8 +156,9 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
   `(if ,condition
        (add-result 'test-failure :reason ,(if reason-args
 					      `(format nil ,@reason-args)
-					      `(format nil "~S returned a true value" ',condition)))
-       (add-result 'test-passed)))
+					      `(format nil "~S returned a true value" ',condition))
+                   :test-expr ',condition)
+       (add-result 'test-passed :test-expr ',condition)))
 
 (defmacro signals (condition &body body)
   "Generates a pass if BODY signals a condition of type
@@ -165,11 +169,14 @@ not evaluated."
        (handler-bind ((,condition (lambda (c)
                                     (declare (ignore c))
                                     ;; ok, body threw condition
-                                    (add-result 'test-passed)
+                                    (add-result 'test-passed 
+                                                :test-expr ',condition)
                                     (return-from ,block-name t))))
 	 (block nil
 	   ,@body
-	   (add-result 'test-failure :reason (format nil "Failed to signal a ~S" ',condition))
+	   (add-result 'test-failure 
+                       :reason (format nil "Failed to signal a ~S" ',condition)
+                       :test-expr ',condition)
 	   (return-from ,block-name nil))))))
 
 (defmacro finishes (&body body)
@@ -182,19 +189,24 @@ fails."
 	   ,@body
 	   (setf ok t))
        (if ok
-	   (add-result 'test-passed)
+	   (add-result 'test-passed :test-expr ',body)
 	   (add-result 'test-failure
-		       :reason (format nil "Test didn't finish"))))))
+		       :reason (format nil "Test didn't finish")
+                       :test-expr ',body)))))
 
 (defmacro pass (&rest message-args)
   "Simply generate a PASS."
-  `(add-result 'test-passed ,@(when message-args
-				`(:reason (format nil ,@message-args)))))
+  `(add-result 'test-passed 
+               :test-expr ',message-args
+               ,@(when message-args
+                       `(:reason (format nil ,@message-args)))))
 
 (defmacro fail (&rest message-args)
   "Simply generate a FAIL."
-  `(add-result 'test-failure ,@(when message-args
-				 `(:reason (format nil ,@message-args)))))
+  `(add-result 'test-failure
+               :test-expr ',message-args
+               ,@(when message-args
+                       `(:reason (format nil ,@message-args)))))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved. 

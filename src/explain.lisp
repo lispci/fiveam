@@ -4,6 +4,9 @@
 
 ;;;; * Analyzing the results
 
+(defparameter *verbose-failures* nil
+  "T if we should print the expression failing, NIL otherwise.")
+
 ;;;; Just as important as defining and runnig the tests is
 ;;;; understanding the results. FiveAM provides the function EXPLAIN
 ;;;; which prints a human readable summary (number passed, number
@@ -35,6 +38,8 @@
 	(format stream "~A ~@{[~A]~}: ~%" 
 		(name (test-case f))
 		(description (test-case f)))
+        (when (and *verbose-failures* (test-expr f))
+          (format stream "    ~S~%" (test-expr f)))
 	(format stream "    ~A.~%" (reason f)))
       (terpri stream))
     (when skipped
