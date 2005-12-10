@@ -33,6 +33,9 @@ See Also: WITH-FIXTURE
   "Insert BODY into the fixture named FIXTURE-NAME.
 
 See Also: DEF-FIXTURE"
+  (assert (get-fixture fixture-name)
+          (fixture-name)
+          "Unknown fixture ~S." fixture-name)
   (destructuring-bind (largs &rest lbody) (get-fixture fixture-name)
     `(macrolet ((&body () '(progn ,@body)))
        (funcall (lambda ,largs ,@lbody) ,@args))))
