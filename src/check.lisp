@@ -110,23 +110,38 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
   (assert (listp test)
           (test)
           "Argument to IS must be a list, not ~S" test)
-  `(if ,test
-       (add-result 'test-passed :test-expr ',test)
-       (add-result 'test-failure
-                   :reason ,(if (null reason-args)
-                                (list-match-case test
-                                  ((not (?predicate ?expected ?actual))
-                                   `(format nil "~S was ~S to ~S" ,?actual ',?predicate ,?expected))
-                                  ((not (?satisfies ?value))
-                                   `(format nil "~S satisfied ~S" ,?value ',?satisfies))
-                                  ((?predicate ?expected ?actual)
-                                   `(format nil "~S was not ~S to ~S" ,?actual ',?predicate ,?expected))
-                                  ((?satisfies ?value)
-                                   `(format nil "~S did not satisfy ~S" ,?value ',?satisfies))
-                                  (t 
-                                   `(is-true ,test ,@reason-args)))
-                                `(format nil ,@reason-args))
-                  :test-expr ',test)))
+  (let (bindings effective-test default-reason-args)
+    (with-unique-names (e a v)
+      (list-match-case test
+        ((not (?predicate ?expected ?actual))
+         (setf bindings (list (list e ?expected)
+                              (list a ?actual))
+               effective-test `(not (,?predicate ,e ,a))
+               default-reason-args (list "~S was ~S to ~S" a `',?predicate e)))
+        ((not (?satisfies ?value))
+         (setf bindings (list (list v ?value))
+               effective-test `(not (,?satisfies ,v))
+               default-reason-args (list  "~S satisfied ~S" v `',?satisfies)))
+        ((?predicate ?expected ?actual)
+         (setf bindings (list (list e ?expected)
+                              (list a ?actual))
+               effective-test `(,?predicate ,e ,a)
+               default-reason-args (list "~S was not ~S to ~S" a `',?predicate e)))
+        ((?satisfies ?value)
+         (setf bindings (list (list v ?value))
+               effective-test `(,?satisfies ,v)
+               default-reason-args (list "~S did not satisfy ~S" v `',?satisfies)))
+        (t
+         (setf bindings '()
+               effective-test test)))
+      `(let ,bindings
+         (if ,effective-test
+             (add-result 'test-passed :test-expr ',test)
+             (add-result 'test-failure
+                         :reason ,(if (null reason-args)
+                                      `(format nil ,@default-reason-args)
+                                      `(format nil ,@reason-args))
+                         :test-expr ',test))))))
 
 ;;;; *** Other checks
 
