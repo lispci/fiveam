@@ -125,11 +125,11 @@ run."))
   (with-run-state (result-list)
     (bind-run-state ((current-test test))
       (labels ((abort-test (e)
-                 (add-result  'unexpected-test-failure
-                              :test-expr nil
-                              :test-case test
-                              :reason (format nil "Unexpected Error: ~S." e)
-                              :condition e))
+                 (add-result 'unexpected-test-failure
+                             :test-expr nil
+                             :test-case test
+                             :reason (format nil "Unexpected Error: ~S." e)
+                             :condition e))
                (run-it ()
                  (let ((result-list '()))
                    (declare (special result-list))
