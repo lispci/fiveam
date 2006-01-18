@@ -6,7 +6,7 @@
 
 ;;;; Test suites allow us to collect multiple tests into a single
 ;;;; object and run them all using asingle name. Test suites do not
-;;;; affect teh way test are run northe way the results are handled,
+;;;; affect the way test are run nor the way the results are handled,
 ;;;; they are simply a test organizing group.
 
 ;;;; Test suites can contain both tests and other test suites. Running

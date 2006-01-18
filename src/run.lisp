@@ -145,7 +145,7 @@ run."))
                          (return-from run-it (run-it)))
                        (ignore ()
                          :report (lambda (stream)
-                                   (format stream "~@<Signal a test failure and abort the test ~S.~@:>" test))
+                                   (format stream "~@<Signal an exceptional test failure and abort the test ~S.~@:>" test))
                          (abort-test (make-instance 'test-failure :test-case test
                                                     :reason "Failure restart."))))
                      result-list))))
