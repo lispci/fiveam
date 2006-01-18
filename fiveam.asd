@@ -1,4 +1,4 @@
-;;;; -*- lisp -*-
+;; -*- lisp -*-
 
 (defpackage :it.bese.FiveAM.system
   (:use :common-lisp
@@ -27,3 +27,5 @@
 
 (defmethod asdf:perform ((op asdf:test-op) (system (eql (find-system :FiveAM))))
   (funcall (intern (string :run!) (string :it.bese.FiveAM)) :it.bese.FiveAM))
+
+;;;;@include "src/packages.lisp"
