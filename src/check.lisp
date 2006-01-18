@@ -73,6 +73,17 @@ when appropiate."))
   (:method ((o t)) nil)
   (:method ((o test-skipped)) t))
 
+(defparameter *debug-on-failure* nil
+  "If non-NIL then we drop into a debugger at each test failure.")
+
+(define-condition debug-test-failure (error)
+  ((failed-result :initarg :failed-result :accessor failed-result)
+   (failed-test :initarg :failed-test :accessor failed-test))
+  (:report (lambda (condition stream)
+             (format stream "Test ~S failed with ~S."
+                     (failed-test condition)
+                     (failed-result condition)))))
+
 (defun add-result (result-type &rest make-instance-args)
   "Create a TEST-RESULT object of type RESULT-TYPE passing it the
   initialize args MAKE-INSTANCE-ARGS and adds the resulting
@@ -83,7 +94,15 @@ when appropiate."))
       (etypecase result
 	(test-passed  (format *test-dribble* "."))
         (unexpected-test-failure (format *test-dribble* "X"))
-	(test-failure (format *test-dribble* "f"))
+	(test-failure
+         (when *debug-on-failure*
+           (restart-case
+               (invoke-debugger (make-instance 'debug-test-failure
+                                               :failed-test current-test
+                                               :failed-result result))
+             (fail ()
+               :report "Report a test failure and continue.")))
+         (format *test-dribble* "f"))
 	(test-skipped (format *test-dribble* "s")))
       (push result result-list))))
 
