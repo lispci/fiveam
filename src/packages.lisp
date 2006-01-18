@@ -55,7 +55,6 @@
            #:!!
            #:!!!
 	   #:*debug-on-error*
-           #:*debug-on-failure*
            #:*verbose-failures*))
 
 ;;;; You can use #+5am to put your test-defining code inline with your
