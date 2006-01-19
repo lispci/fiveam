@@ -46,6 +46,10 @@
 	   #:pass
 	   #:fail
 	   #:*test-dribble*
+           #:for-all
+           #:gen-integer
+           #:gen-string
+           #:gen-character
 	   ;; running tests
            #:run
            #:run-all-tests
