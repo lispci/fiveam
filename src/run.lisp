@@ -36,6 +36,9 @@
 (defparameter *debug-on-error* nil
   "T if we should drop into a debugger on error, NIL otherwise.")
 
+(defparameter *debug-on-failure* nil
+  "T if we should drop into a debugger on a failing check, NIL otherwise.")
+
 (defun import-testing-symbols (package-designator)
   (import '(5am::is 5am::is-true 5am::is-false 5am::signals 5am::finishes)
 	  package-designator))
@@ -133,8 +136,14 @@ run."))
                (run-it ()
                  (let ((result-list '()))
                    (declare (special result-list))
-                   (handler-bind ((error (lambda (e)
-                                           (unless *debug-on-error*
+                   (handler-bind ((check-failure (lambda (e)
+                                                   (declare (ignore e))
+                                                   (unless *debug-on-failure*
+                                                     (invoke-restart
+                                                      (find-restart 'ignore-failure)))))
+                                  (error (lambda (e)
+                                           (unless (or *debug-on-error*
+                                                       (typep e 'check-failure))
                                              (abort-test e)
                                              (return-from run-it result-list)))))
                      (restart-case

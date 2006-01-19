@@ -46,6 +46,22 @@
   (:method ((o t)) nil)
   (:method ((o test-passed)) t))
 
+(define-condition check-failure (error)
+  ((reason :accessor reason :initarg :reason :initform "no reason given")
+   (test-case :accessor test-case :initarg :test-case)
+   (test-expr :accessor test-expr :initarg :test-expr))
+  (:documentation "Signaled when a check fails.")
+  (:report  (lambda (c stream)
+              (format stream "The following check failed: ~S~%~A."
+                      (test-expr c)
+                      (reason c)))))
+
+(defmacro process-failure (&rest args)
+  `(progn
+    (with-simple-restart (ignore-failure "Continue the test run.")
+      (error 'check-failure ,@args))
+    (add-result 'test-failure ,@args)))
+
 (defclass test-failure (test-result)
   ()
   (:documentation "Class for unsuccessful checks."))
@@ -138,11 +154,10 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
       `(let ,bindings
          (if ,effective-test
              (add-result 'test-passed :test-expr ',test)
-             (add-result 'test-failure
-                         :reason ,(if (null reason-args)
-                                      `(format nil ,@default-reason-args)
-                                      `(format nil ,@reason-args))
-                         :test-expr ',test))))))
+             (process-failure :reason ,(if (null reason-args)
+                                           `(format nil ,@default-reason-args)
+                                           `(format nil ,@reason-args))
+                              :test-expr ',test))))))
 
 ;;;; *** Other checks
 
@@ -158,11 +173,12 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
   does not inspect CONDITION to determine how to report the
   failure."
   `(if ,condition
-       (add-result 'test-passed :test-expr ',condition)
-       (add-result 'test-failure :reason ,(if reason-args
-					      `(format nil ,@reason-args)
-					      `(format nil "~S did not return a true value" ',condition))
-                   :test-expr ',condition)))
+    (add-result 'test-passed :test-expr ',condition)
+    (process-failure
+     :reason ,(if reason-args
+                  `(format nil ,@reason-args)
+                  `(format nil "~S did not return a true value" ',condition))
+     :test-expr ',condition)))
 
 (defmacro is-false (condition &rest reason-args)
   "Generates a pass if CONDITION returns false, generates a
@@ -170,11 +186,12 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
   not inspect CONDITION to determine what reason to give it case
   of test failure"
   `(if ,condition
-       (add-result 'test-failure :reason ,(if reason-args
-					      `(format nil ,@reason-args)
-					      `(format nil "~S returned a true value" ',condition))
-                   :test-expr ',condition)
-       (add-result 'test-passed :test-expr ',condition)))
+    (process-failure
+     :reason ,(if reason-args
+                  `(format nil ,@reason-args)
+                  `(format nil "~S returned a true value" ',condition))
+     :test-expr ',condition)
+    (add-result 'test-passed :test-expr ',condition)))
 
 (defmacro signals (condition &body body)
   "Generates a pass if BODY signals a condition of type
@@ -190,9 +207,9 @@ not evaluated."
                                     (return-from ,block-name t))))
 	 (block nil
 	   ,@body
-	   (add-result 'test-failure 
-                       :reason (format nil "Failed to signal a ~S" ',condition)
-                       :test-expr ',condition)
+           (process-failure
+            :reason (format nil "Failed to signal a ~S" ',condition)
+            :test-expr ',condition)
 	   (return-from ,block-name nil))))))
 
 (defmacro finishes (&body body)
@@ -206,9 +223,9 @@ fails."
 	   (setf ok t))
        (if ok
 	   (add-result 'test-passed :test-expr ',body)
-	   (add-result 'test-failure
-		       :reason (format nil "Test didn't finish")
-                       :test-expr ',body)))))
+           (process-failure
+            :reason (format nil "Test didn't finish")
+            :test-expr ',body)))))
 
 (defmacro pass (&rest message-args)
   "Simply generate a PASS."
@@ -219,10 +236,10 @@ fails."
 
 (defmacro fail (&rest message-args)
   "Simply generate a FAIL."
-  `(add-result 'test-failure
-               :test-expr ',message-args
-               ,@(when message-args
-                       `(:reason (format nil ,@message-args)))))
+  `(process-failure
+    :test-expr ',message-args
+    ,@(when message-args
+            `(:reason (format nil ,@message-args)))))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved. 
