@@ -120,7 +120,3 @@
   (for-all ((result (gen-integer :min 0 :max 1)))
     (is (plusp result))
     (is (= result 0))))
-
-(test fail-guard-conditions
-  (for-all ((x (gen-integer :min 1 :max 1) (= x 0)))
-    (pass)))
