@@ -111,9 +111,13 @@
 
 (test dummy-strcat
   (for-all ((result (gen-string))
-            (split-point (gen-integer :min 0 :max 80)
+            (split-point (gen-integer :min 0 :max 10000)
                          (< split-point (length result))))
     (is (string= result (dummy-strcat (subseq result 0 split-point)
                                       (subseq result split-point))))))
 
-(5am:run! 'dummy-strcat)
+(test random-failure
+  (for-all ((result (gen-integer :min 0 :max 1)))
+    (is (plusp result))
+    (is (= result 0))))
+
