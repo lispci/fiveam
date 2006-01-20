@@ -120,8 +120,14 @@ returning true. This second run limit prevents that.")
                                 (min (1+ most-negative-fixnum)))
   (+ min (random (1+ (- max min)))))
 
-(defgenerator gen-character (&key (code (gen-integer :min 0 :max (1- char-code-limit))))
-  (code-char (funcall code)))
+(defgenerator gen-character (&key (code (gen-integer :min 0 :max (1- char-code-limit)))
+                                  (alphanumericp nil))
+  (if alphanumericp
+      (code-char (funcall code))
+      (loop
+         for char = (code-char (funcall code))
+         until (alphanumericp char)
+         finally (return char))))
 
 (defun gen-string (&key
                    (length (gen-integer :min 0 :max 80))
