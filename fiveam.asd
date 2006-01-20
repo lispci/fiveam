@@ -18,7 +18,7 @@
 			       (:file "packages")
 			       (:file "run" :depends-on ("packages" "classes" "test" "suite" "check"))
 			       (:file "suite" :depends-on ("packages" "test" "classes"))
-                               (:file "random-check" :depends-on ("packages" "check"))
+                               (:file "random" :depends-on ("packages" "check"))
 			       (:file "test" :depends-on ("packages" "classes"))))
 		 (:module :t
 		  :components ((:file "suite")
