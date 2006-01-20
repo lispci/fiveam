@@ -14,6 +14,18 @@
 ;;;; failure we stop running and report what values of the variables
 ;;;; caused the code to fail.
 
+(defparameter *num-trials* 100
+  "Number of times we attempt to run the body of the FOR-ALL test.")
+
+(defparameter *max-trials* 10000
+  "Number of total times we attempt to run the body of the
+  FOR-ALL test including when the body is skipped due to failed
+  guard conditions.
+
+Since we have guard conditions we may get into infinite loops
+where the test code is never run due to the guards never
+returning true. This second run limit prevents that.")
+
 (defmacro for-all (bindings &body body)
   `(perform-random-testing
     (list ,@(mapcar #'second bindings))
@@ -26,14 +38,17 @@
 (defun perform-random-testing (generators body)
   (loop
      with random-state = *random-state*
-     with total-counter = 1000
-     with counter = 100
-     until (zerop counter)
+     with total-counter = *max-trials*
+     with counter = *num-trials*
+     with run-at-least-once = nil
+     until (or (zerop total-counter)
+               (zerop counter))
      do (let ((result (perform-random-testing/run-once generators body)))
           (ecase (first result)
             (:pass
              (decf counter)
-             (decf total-counter))
+             (decf total-counter)
+             (setf run-at-least-once t))
             (:no-tests
              (add-result 'for-all-test-no-tests
                          :reason "No tests"
@@ -48,7 +63,10 @@
                          :failure-values (second result)
                          :result-list (third result))
              (return-from perform-random-testing nil))))
-     finally (add-result 'for-all-test-passed)))
+     finally (if run-at-least-once
+                 (add-result 'for-all-test-passed)
+                 (add-result 'for-all-test-never-run
+                             :reason "Guard conditions never passed"))))
 
 (defun perform-random-testing/run-once (generators body)
   (catch 'run-once
@@ -77,11 +95,14 @@
   (:method ((object for-all-test-failed)) t)
   (:method ((object t)) nil))
 
+(defmethod reason ((result for-all-test-failed))
+  (format nil "Falsafiable with ~S" (slot-value result 'failure-values)))
+
 (defclass for-all-test-no-tests (test-failure for-all-test-result)
   ())
 
-(defmethod reason ((result for-all-test-failed))
-  (format nil "Falsafiable with ~S" (slot-value result 'failure-values)))
+(defclass for-all-test-never-run (test-failure for-all-test-result)
+  ())
 
 ;;;; ** Generators.
 
