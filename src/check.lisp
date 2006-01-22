@@ -193,27 +193,29 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
      :test-expr ',condition)
     (add-result 'test-passed :test-expr ',condition)))
 
-(defmacro signals ((condition &optional reason-control reason-args)
+(defmacro signals (condition-spec
                    &body body)
   "Generates a pass if BODY signals a condition of type
 CONDITION. BODY is evaluated in a block named NIL, CONDITION is
 not evaluated."
   (let ((block-name (gensym)))
-    `(block ,block-name
-       (handler-bind ((,condition (lambda (c)
-                                    (declare (ignore c))
-                                    ;; ok, body threw condition
-                                    (add-result 'test-passed 
-                                                :test-expr ',condition)
-                                    (return-from ,block-name t))))
-	 (block nil
-	   ,@body
-           (process-failure
-            :reason ,(if reason-control
-                         `(format nil ,reason-control ,@reason-args)
-                         `(format nil "Failed to signal a ~S" ',condition))
-            :test-expr ',condition)
-	   (return-from ,block-name nil))))))
+    (destructuring-bind (condition &optional reason-control reason-args)
+        (ensure-list condition-spec)
+      `(block ,block-name
+         (handler-bind ((,condition (lambda (c)
+                                      (declare (ignore c))
+                                      ;; ok, body threw condition
+                                      (add-result 'test-passed 
+                                                  :test-expr ',condition)
+                                      (return-from ,block-name t))))
+           (block nil
+             ,@body
+             (process-failure
+              :reason ,(if reason-control
+                           `(format nil ,reason-control ,@reason-args)
+                           `(format nil "Failed to signal a ~S" ',condition))
+              :test-expr ',condition)
+             (return-from ,block-name nil)))))))
 
 (defmacro finishes (&body body)
   "Generates a pass if BODY executes to normal completion. In
