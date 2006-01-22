@@ -52,6 +52,7 @@
            #:run
            #:run-all-tests
            #:explain
+           #:explain!
            #:run!
            #:!
            #:!!
