@@ -30,3 +30,5 @@
   (funcall (intern (string :run!) (string :it.bese.FiveAM)) :it.bese.FiveAM))
 
 ;;;;@include "src/packages.lisp"
+
+;;;;@include "t/example.lisp"

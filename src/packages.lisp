@@ -2,8 +2,6 @@
 
 ;;;; * Introduction
 
-;;;; FiveAM is A simple Common Lisp unit testing library.
-
 ;;;; FiveAM is a testing framework. It takes care of all the boring
 ;;;; bookkeeping associated with managing a test framework allowing
 ;;;; the developer to focus on writing tests and code.
@@ -11,13 +9,13 @@
 ;;;; FiveAM was designed with the following premises:
 
 ;;;; - Defining tests should be about writing tests, not
-;;;;   infrastructure. The developer should be able to focus on what
-;;;;   they're testing, not the testing framework.
+;;;; infrastructure. The developer should be able to focus on what
+;;;; they're testing, not the testing framework.
 
 ;;;; - Interactive testing is the norm. Common Lisp is an interactive
-;;;;  development environment, the testing environment should allow
-;;;;  the developer to quickly and easily redefine, change, remove
-;;;;  and run tests.
+;;;; development environment, the testing environment should allow the
+;;;; developer to quickly and easily redefine, change, remove and run
+;;;; tests.
 
 (defpackage :it.bese.FiveAM
   (:use :common-lisp :it.bese.arnesi)
@@ -70,39 +68,17 @@
 
 ;;;;@include "check.lisp"
 
-;;;;@include "test.lisp"
+;;;;@include "random.lisp"
 
 ;;;;@include "fixture.lisp"
+
+;;;;@include "test.lisp"
 
 ;;;;@include "suite.lisp"
 
 ;;;;@include "run.lisp"
 
 ;;;;@include "explain.lisp"
-
-;;;; * Examples
-
-#| (def-suite my-suite :description "My Example Suite")
-
- (in-suite my-suite)
-
- (test my-tests
-  "Example"
-  (is (= 4 (+ 2 2)) "2 plus 2 wasn't equal to 4 (using #'= to test equality)")
-  (is (= 0 (+ -1 1)))
-  (throws (error "Trying to add 4 to FOO didn't signal an error")
-     (+ 'foo 4))
-  (is (= 0 (+ 1 1)) "this should have failed"))
-
- (run! 'my-suite)
-;; Running suite MY-SUITE
-..F.
-Suite My Example Suite ran 4 tests (3/0/1) - 1 FAILED -
-Failed Tests:
-MY-TESTS FAILED: (+ 1 1) was not = to 0 (returned 2 instead)
-   Description: Example.
-   Message:     this should have failed
-NIL |#
 
 ;;;; * Colophon
 
