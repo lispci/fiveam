@@ -2,7 +2,7 @@
 
 (in-package :it.bese.FiveAM)
 
-;;;; * Random (QuickCheck-ish) testing
+;;;; ** Random (QuickCheck-ish) testing
 
 ;;;; FiveAM provides the ability to automatically generate a
 ;;;; collection of random input data for a specific test and run a
@@ -104,7 +104,7 @@ returning true. This second run limit prevents that.")
 (defclass for-all-test-never-run (test-failure for-all-test-result)
   ())
 
-;;;; ** Generators.
+;;;; *** Generators
 
 ;;;; Since this is random testing we need some way of creating random
 ;;;; data to feed to our code. Generators are regular functions whcih
