@@ -59,6 +59,7 @@
            #:!
            #:!!
            #:!!!
+           #:*run-test-when-defined*
 	   #:*debug-on-error*
            #:*debug-on-failure*
            #:*verbose-failures*))
