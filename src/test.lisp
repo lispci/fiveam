@@ -43,18 +43,18 @@ depending on another.
 SUITE defaults to the current value of *SUITE*."
   (destructuring-bind (name &key depends-on (suite nil suite-supplied-p))
       (ensure-list name)
-    (let (lambda description)
+    (let (description)
       (setf description (if (stringp (car body))
 			    (pop body)
-			    "")
-	    lambda body)
+			    ""))
       `(progn
-	 (setf (get-test ',name)
-	       (make-instance 'test-case
-			      :name ',name
-			      :test-lambda (lambda () ,@lambda)
-			      :description ,description
-			      :depends-on ',depends-on))
+	 (setf (get-test ',name) (make-instance 'test-case
+                                                :name ',name
+                                                :test-lambda
+                                                (lambda ()
+                                                  (funcall (compile nil '(lambda () ,@body))))
+                                                :description ,description
+                                                :depends-on ',depends-on))
 	 ,(if suite-supplied-p
 	      `(setf (gethash ',name (tests (get-test ',suite)))
 		     ',name)
