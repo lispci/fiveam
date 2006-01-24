@@ -107,7 +107,7 @@ returning true. This second run limit prevents that.")
 ;;;; *** Generators
 
 ;;;; Since this is random testing we need some way of creating random
-;;;; data to feed to our code. Generators are regular functions whcih
+;;;; data to feed to our code. Generators are regular functions which
 ;;;; create this random data.
 
 ;;;; We provide a set of built-in generators.
@@ -129,25 +129,21 @@ returning true. This second run limit prevents that.")
          until (alphanumericp char)
          finally (return char))))
 
-(defun gen-string (&key
-                   (length (gen-integer :min 0 :max 80))
-                   (elements (gen-character))
-                   (element-type 'character))
-  (lambda ()
-    (loop
-       with length = (funcall length)
-       with string = (make-string length :element-type element-type)
-       for index below length
-       do (setf (aref string index) (funcall elements))
-       finally (return string))))
+(defgenerator gen-string (&key (length (gen-integer :min 0 :max 80))
+                               (elements (gen-character))
+                               (element-type 'character))
+  (loop
+     with length = (funcall length)
+     with string = (make-string length :element-type element-type)
+     for index below length
+     do (setf (aref string index) (funcall elements))
+     finally (return string)))
 
-(defun gen-list (&key
-                 (length (gen-integer :min 0 :max 10))
-                 (elements (gen-integer :min -10 :max 10)))
-  (lambda ()
-    (loop
-       repeat (funcall length)
-       collect (funcall elements))))
+(defgenerator gen-list (&key (length (gen-integer :min 0 :max 10))
+                             (elements (gen-integer :min -10 :max 10)))
+  (loop
+     repeat (funcall length)
+     collect (funcall elements)))
 
 ;;;; The trivial always-produce-the-same-thing generator is done using
 ;;;; cl:constantly.
