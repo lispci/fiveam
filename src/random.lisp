@@ -117,7 +117,7 @@ returning true. This second run limit prevents that.")
      (lambda () ,@body)))
 
 (defgenerator gen-integer (&key (max (1+ most-positive-fixnum))
-                                (min (1+ most-negative-fixnum)))
+                                (min (1- most-negative-fixnum)))
   (+ min (random (1+ (- max min)))))
 
 (defgenerator gen-character (&key (code (gen-integer :min 0 :max (1- char-code-limit)))
