@@ -60,7 +60,12 @@ SUITE defaults to the current value of *SUITE*."
 		     ',name)
 	      `(setf (gethash ',name (tests (or *suite* (get-test 'NIL))))
 		     ',name))
+         (when *run-when-defined*
+           (run! ',name))
 	 ',name))))
+
+(defvar *run-test-when-defined* nil
+  "When non-NIL tests are run as soon as they are defined.")
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved. 
