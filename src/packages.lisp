@@ -46,8 +46,10 @@
 	   #:*test-dribble*
            #:for-all
            #:gen-integer
-           #:gen-string
+           #:gen-float
            #:gen-character
+           #:gen-string
+           #:gen-list
 	   ;; running tests
            #:run
            #:run-all-tests
