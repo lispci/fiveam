@@ -60,7 +60,7 @@ SUITE defaults to the current value of *SUITE*."
 		     ',name)
 	      `(setf (gethash ',name (tests (or *suite* (get-test 'NIL))))
 		     ',name))
-         (when *run-when-defined*
+         (when *run-test-when-defined*
            (run! ',name))
 	 ',name))))
 
