@@ -120,6 +120,26 @@ returning true. This second run limit prevents that.")
                                 (min (1- most-negative-fixnum)))
   (+ min (random (1+ (- max min)))))
 
+(defgenerator gen-float (&key bound (type 'short-float))
+  (let* ((most-negative (ecase type
+                          (short-float most-negative-short-float)
+                          (single-float most-negative-single-float)
+                          (double-float most-negative-double-float)
+                          (long-float most-negative-long-float)))
+         (most-positive (ecase type
+                          (short-float most-positive-short-float)
+                          (single-float most-positive-single-float)
+                          (double-float most-positive-double-float)
+                          (long-float most-positive-long-float)))
+         (bound (or bound (max most-positive (- most-negative)))))
+    (coerce 
+     (ecase (random 2)
+      (0 ;; generate a positive number
+       (random (min most-positive bound)))
+      (1 ;; generate a negative number
+       (- (random (min (- most-negative) bound)))))
+     type)))
+
 (defgenerator gen-character (&key (code (gen-integer :min 0 :max (1- char-code-limit)))
                                   (alphanumericp nil))
   (if alphanumericp
