@@ -16,7 +16,7 @@
   names to objects.")
 
 (defmacro test (name &body body)
-  "Create a suite named NAME. If NAME is a list it must be of the
+  "Create a test named NAME. If NAME is a list it must be of the
 form:
 
   (name &key depends-on suite)
