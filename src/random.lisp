@@ -112,58 +112,75 @@ returning true. This second run limit prevents that.")
 
 ;;;; We provide a set of built-in generators.
 
-(defmacro defgenerator (name arguments &body body)
-  `(defun ,name ,arguments
-     (lambda () ,@body)))
+(defun gen-integer (&key (max (1+ most-positive-fixnum))
+                    (min (1- most-negative-fixnum)))
+  "Returns a generator which produces random integers greater
+than or equal to MIN and less than or equal to MIN."
+  (lambda ()
+    (+ min (random (1+ (- max min))))))
 
-(defgenerator gen-integer (&key (max (1+ most-positive-fixnum))
-                                (min (1- most-negative-fixnum)))
-  (+ min (random (1+ (- max min)))))
+(defun gen-float (&key bound (type 'short-float))
+  "Returns a generator which producs floats of type TYPE. BOUND,
+if specified, constrains the ruselts to be in the range (-BOUND,
+BOUND)."
+  (lambda ()
+    (let* ((most-negative (ecase type
+                            (short-float most-negative-short-float)
+                            (single-float most-negative-single-float)
+                            (double-float most-negative-double-float)
+                            (long-float most-negative-long-float)))
+           (most-positive (ecase type
+                            (short-float most-positive-short-float)
+                            (single-float most-positive-single-float)
+                            (double-float most-positive-double-float)
+                            (long-float most-positive-long-float)))
+           (bound (or bound (max most-positive (- most-negative)))))
+      (coerce 
+       (ecase (random 2)
+         (0 ;; generate a positive number
+          (random (min most-positive bound)))
+         (1 ;; generate a negative number
+          (- (random (min (- most-negative) bound)))))
+       type))))
 
-(defgenerator gen-float (&key bound (type 'short-float))
-  (let* ((most-negative (ecase type
-                          (short-float most-negative-short-float)
-                          (single-float most-negative-single-float)
-                          (double-float most-negative-double-float)
-                          (long-float most-negative-long-float)))
-         (most-positive (ecase type
-                          (short-float most-positive-short-float)
-                          (single-float most-positive-single-float)
-                          (double-float most-positive-double-float)
-                          (long-float most-positive-long-float)))
-         (bound (or bound (max most-positive (- most-negative)))))
-    (coerce 
-     (ecase (random 2)
-      (0 ;; generate a positive number
-       (random (min most-positive bound)))
-      (1 ;; generate a negative number
-       (- (random (min (- most-negative) bound)))))
-     type)))
+(defun gen-character (&key (code (gen-integer :min 0 :max (1- char-code-limit)))
+                           (alphanumericp nil))
+  "Returns a generator of characters.
 
-(defgenerator gen-character (&key (code (gen-integer :min 0 :max (1- char-code-limit)))
-                                  (alphanumericp nil))
-  (if alphanumericp
-      (code-char (funcall code))
-      (loop
-         for char = (code-char (funcall code))
-         until (alphanumericp char)
-         finally (return char))))
+CODE must be a generator of random integers. ALPHANUMERICP, if
+non-NIL, limits the returned chars to those which pass
+alphanumericp."
+  (lambda ()
+    (if alphanumericp
+        (code-char (funcall code))
+        (loop
+           for char = (code-char (funcall code))
+           until (alphanumericp char)
+           finally (return char)))))
 
-(defgenerator gen-string (&key (length (gen-integer :min 0 :max 80))
-                               (elements (gen-character))
-                               (element-type 'character))
-  (loop
-     with length = (funcall length)
-     with string = (make-string length :element-type element-type)
-     for index below length
-     do (setf (aref string index) (funcall elements))
-     finally (return string)))
+(defun gen-string (&key (length (gen-integer :min 0 :max 80))
+                        (elements (gen-character))
+                        (element-type 'character))
+  "Returns a generator which producs random strings. LENGTH must
+be a generator which producs integers, ELEMENTS must be a
+generator which produces characters of type ELEMENT-TYPE."
+  (lambda ()
+    (loop
+       with length = (funcall length)
+       with string = (make-string length :element-type element-type)
+       for index below length
+       do (setf (aref string index) (funcall elements))
+       finally (return string))))
 
-(defgenerator gen-list (&key (length (gen-integer :min 0 :max 10))
-                             (elements (gen-integer :min -10 :max 10)))
-  (loop
-     repeat (funcall length)
-     collect (funcall elements)))
+(defun gen-list (&key (length (gen-integer :min 0 :max 10))
+                      (elements (gen-integer :min -10 :max 10)))
+  "Returns a generator which producs random lists. LENGTH must be
+an integer generator and ELEMENTS must be a generator which
+producs objects."
+  (lambda ()
+    (loop
+       repeat (funcall length)
+       collect (funcall elements))))
 
 ;;;; The trivial always-produce-the-same-thing generator is done using
 ;;;; cl:constantly.
