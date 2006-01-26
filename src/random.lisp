@@ -14,6 +14,16 @@
 ;;;; failure we stop running and report what values of the variables
 ;;;; caused the code to fail.
 
+;;;; The generation of the random data is done using "generator
+;;;; functions" (see below for details). A generator function is a
+;;;; function which creates, based on user supplied parameters, a
+;;;; function which returns random data. In order to facilitate
+;;;; generating good random data the FOR-ALL macro also supports guard
+;;;; conditions and creating one random input based on the values of
+;;;; another (see the FOR-ALL macro for details).
+
+;;;; *** Public Interface to the Random Tester
+
 (defparameter *num-trials* 100
   "Number of times we attempt to run the body of the FOR-ALL test.")
 
@@ -27,13 +37,51 @@ where the test code is never run due to the guards never
 returning true. This second run limit prevents that.")
 
 (defmacro for-all (bindings &body body)
-  `(perform-random-testing
-    (list ,@(mapcar #'second bindings))
-    (lambda ,(mapcar #'first bindings)
-      (if (and ,@(delete-if #'null (mapcar #'third bindings)))
-          (progn ,@body)
-          (throw 'run-once
-            (list :guard-conditions-failed))))))
+  "Bind BINDINGS to random variables and test BODY *num-trials* times.
+
+BINDINGS is a list of binding forms, each element is a list
+of (BINDING VALUE &optional GUARD). Value, which is evaluated
+once when the for-all is evaluated, must return a generator which
+be called each time BODY is evaluated. BINDING is either a symbol
+or a list which will be passed to destructuring-bind. GUARD is a
+form which, if present, stops BODY from executing when IT returns
+NIL. The GUARDS are evaluated after all the random data has been
+generated and they can refer to the current value of any
+binding. NB: Generator forms, unlike guard forms, can not contain
+references to the boud variables.
+
+Examples:
+
+  (for-all ((a (gen-integer)))
+    (is (integerp a)))
+
+  (for-all ((a (gen-integer) (plusp a)))
+    (is (integerp a))
+    (is (plusp a)))
+
+  (for-all ((less (gen-integer))
+            (more (gen-integer) (< less more)))
+    (is (<= less more)))
+
+  (for-all (((a b) (gen-two-integers)))
+    (is (integerp a))
+    (is (integerp b)))"
+  (with-unique-names (test-lambda-args)
+    `(perform-random-testing
+      (list ,@(mapcar #'second bindings))
+      (lambda (,test-lambda-args)
+        (destructuring-bind ,(mapcar #'first bindings)
+            ,test-lambda-args
+          (if (and ,@(delete-if #'null (mapcar #'third bindings)))
+              (progn ,@body)
+              (throw 'run-once
+                (list :guard-conditions-failed))))))))
+
+;;;; *** Implementation 
+
+;;;; We could just make FOR-ALL a monster macro, but having FOR-ALL be
+;;;; a preproccessor for the perform-random-testing function is
+;;;; actually much easier.
 
 (defun perform-random-testing (generators body)
   (loop
@@ -72,7 +120,7 @@ returning true. This second run limit prevents that.")
   (catch 'run-once
     (bind-run-state ((result-list '()))
       (let ((values (mapcar #'funcall generators)))
-        (apply body values)
+        (funcall body values)
         (cond
           ((null result-list)
            (throw 'run-once (list :no-tests)))
@@ -113,7 +161,7 @@ returning true. This second run limit prevents that.")
 ;;;; We provide a set of built-in generators.
 
 (defun gen-integer (&key (max (1+ most-positive-fixnum))
-                    (min (1- most-negative-fixnum)))
+                         (min (1- most-negative-fixnum)))
   "Returns a generator which produces random integers greater
 than or equal to MIN and less than or equal to MIN."
   (lambda ()
