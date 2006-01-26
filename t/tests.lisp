@@ -145,3 +145,50 @@
     (run 'circular-1))
   (signals circular-dependency
     (run 'circular-2)))
+
+(test gen-integer
+  (for-all ((a (gen-integer)))
+    (is (integerp a))))
+
+(test for-all-guarded
+  (for-all ((less (gen-integer))
+            (more (gen-integer) (< less more)))
+    (is (< less more))))
+
+(test gen-float
+  (macrolet ((test-gen-float (type)
+               `(for-all ((unbounded (gen-float :type ',type))
+                          (bounded   (gen-float :type ',type :bound 42)))
+                  (is (typep unbounded ',type))
+                  (is (typep bounded ',type))
+                  (is (<= (abs bounded) 42)))))
+    (test-gen-float single-float)
+    (test-gen-float short-float)
+    (test-gen-float double-float)
+    (test-gen-float long-float)))
+
+(test gen-character
+  (for-all ((c (gen-character)))
+    (is (characterp c)))
+  (for-all ((c (gen-character :code (gen-integer :min 32 :max 40))))
+    (is (characterp c))
+    (member c (list #\Space #\! #\" #\# #\$ #\% #\& #\' #\())))
+
+(test gen-string
+  (for-all ((s (gen-string)))
+    (is (stringp s)))
+  (for-all ((s (gen-string :length (gen-integer :min 0 :max 2))))
+    (is (<= (length s) 2)))
+  (for-all ((s (gen-string :elements (gen-character :code (gen-integer :min 0 :max 0))
+                           :length (constantly 2))))
+    (is (= 2 (length s)))
+    (is (every (curry #'char= #\Null) s))))
+
+(defun dummy-mv-generator ()
+  (lambda ()
+    (list 1 1)))
+
+(test for-all-destructuring-bind
+  (for-all (((a b) (dummy-mv-generator)))
+    (is (= 1 a))
+    (is (= 1 b))))
