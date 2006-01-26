@@ -20,7 +20,9 @@
   "Define a new test-suite named NAME.
 
 IN (a symbol), if provided, causes this suite te be nested in the
-suite named by IN."
+suite named by IN. NB: This macro is built on top of make-suite,
+as such it, like make-suite, will overrwrite any existing suite
+named NAME."
   `(progn
      (make-suite ',name
 		 ,@(when description `(:description ,description))
@@ -28,7 +30,9 @@ suite named by IN."
      ',name))
 
 (defun make-suite (name &key description in)
-  "Create a new test suite object."
+  "Create a new test suite object.
+
+Overides any existing suite named NAME."
   (let ((suite (make-instance 'test-suite :name name)))
     (when description
       (setf (description suite) description))
