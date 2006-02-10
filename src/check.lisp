@@ -147,10 +147,10 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
          (setf bindings (list (list v ?value))
                effective-test `(,?satisfies ,v)
                default-reason-args (list "~S did not satisfy ~S" v `',?satisfies)))
-        (_?
+        (?_
          (setf bindings '()
                effective-test test
-               default-reason-args (list "No reason supplied."))))
+               default-reason-args (list "No reason supplied"))))
       `(let ,bindings
          (if ,effective-test
              (add-result 'test-passed :test-expr ',test)
