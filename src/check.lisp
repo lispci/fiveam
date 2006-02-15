@@ -207,13 +207,13 @@ not evaluated."
                                                   :test-expr ',condition)
                                       (return-from ,block-name t))))
            (block nil
-             ,@body
-             (process-failure
-              :reason ,(if reason-control
-                           `(format nil ,reason-control ,@reason-args)
-                           `(format nil "Failed to signal a ~S" ',condition))
-              :test-expr ',condition)
-             (return-from ,block-name nil)))))))
+             ,@body))
+         (process-failure
+          :reason ,(if reason-control
+                       `(format nil ,reason-control ,@reason-args)
+                       `(format nil "Failed to signal a ~S" ',condition))
+          :test-expr ',condition)
+         (return-from ,block-name nil)))))
 
 (defmacro finishes (&body body)
   "Generates a pass if BODY executes to normal completion. In
