@@ -234,5 +234,12 @@ producs objects."
        repeat (funcall length)
        collect (funcall elements))))
 
+(defun gen-buffer (&key (length (gen-integer :min 0 :max 50))
+                        (element-type '(unsigned-byte 8))
+                        (elements (gen-integer :min 0 :max (1- (expt 2 8)))))
+  (lambda ()
+    (let ((buffer (make-array (funcall length) :element-type element-type)))
+      (map-into buffer elements))))
+
 ;;;; The trivial always-produce-the-same-thing generator is done using
 ;;;; cl:constantly.

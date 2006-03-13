@@ -50,6 +50,7 @@
            #:gen-character
            #:gen-string
            #:gen-list
+           #:gen-buffer
 	   ;; running tests
            #:run
            #:run-all-tests
