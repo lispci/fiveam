@@ -241,5 +241,9 @@ producs objects."
     (let ((buffer (make-array (funcall length) :element-type element-type)))
       (map-into buffer elements))))
 
+(defun gen-one-element (&rest elements)
+  (lambda ()
+    (nth (random (length elements)) elements)))
+
 ;;;; The trivial always-produce-the-same-thing generator is done using
 ;;;; cl:constantly.

@@ -51,6 +51,7 @@
            #:gen-string
            #:gen-list
            #:gen-buffer
+           #:gen-one-element
 	   ;; running tests
            #:run
            #:run-all-tests
