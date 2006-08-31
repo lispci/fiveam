@@ -191,7 +191,8 @@ BOUND)."
           (- (random (min (- most-negative) bound)))))
        type))))
 
-(defun gen-character (&key (code (gen-integer :min 0 :max (1- char-code-limit)))
+(defun gen-character (&key (code-limit char-code-limit)
+                           (code (gen-integer :min 0 :max (1- code-limit)))
                            (alphanumericp nil))
   "Returns a generator of characters.
 
