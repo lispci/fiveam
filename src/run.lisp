@@ -131,7 +131,7 @@ run."))
                  (add-result 'unexpected-test-failure
                              :test-expr nil
                              :test-case test
-                             :reason (format nil "Unexpected Error: ~S." e)
+                             :reason (format nil "Unexpected Error: ~S~%~A." e e)
                              :condition e))
                (run-it ()
                  (let ((result-list '()))
