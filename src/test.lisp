@@ -15,6 +15,10 @@
   :documentation "Lookup table mapping test (and test suite)
   names to objects.")
 
+(defun test-names ()
+  (loop for test being the hash-keys of *test*
+        collect test))
+
 (defmacro test (name &body body)
   "Create a test named NAME. If NAME is a list it must be of the
 form:

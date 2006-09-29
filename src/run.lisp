@@ -171,6 +171,9 @@ run."))
 (defmethod %run ((test test-case))
   (run-resolving-dependencies test))
 
+(defmethod %run ((tests list))
+  (mapc #'%run tests))
+
 (defmethod %run ((suite test-suite))
   (let ((suite-results '()))
     (bind-run-state ((result-list '()))

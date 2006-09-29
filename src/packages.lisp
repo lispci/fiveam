@@ -28,6 +28,7 @@
 	   #:test
 	   #:get-test
 	   #:rem-test
+           #:test-names
 	   ;; fixtures
 	   #:make-fixture
 	   #:def-fixture
