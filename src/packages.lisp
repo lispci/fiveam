@@ -39,6 +39,7 @@
 	   ;; running checks
            #:is
            #:is-equal
+           #:is-string=
            #:is-true
            #:is-false
            #:signals

@@ -184,6 +184,13 @@ If the value is a (values a b * d *) form then the elements at * are not compare
                         (is (equal ,expr-result (multiple-value-list ,value))))
               else collect `(is (equal ,expr ,value))))))
 
+(defmacro is-string= (&rest args)
+  "Generates (is (string= ,expr ,value)) for each pair of elements."
+  `(progn
+    ,@(loop for (expr value) on args by #'cddr
+            do (assert (and expr value))
+            collect `(is (string= ,expr ,value)))))
+
 (defmacro is-true (condition &rest reason-args)
   "Like IS this check generates a pass if CONDITION returns true
   and a failure if CONDITION returns false. Unlike IS this check
