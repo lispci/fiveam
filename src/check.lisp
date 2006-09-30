@@ -165,6 +165,25 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
      (format *test-dribble* "s")
      (add-result 'test-skipped :reason (format nil ,@reason))))
 
+(defmacro is-equal (&rest args)
+  "Generates (is (equal (multiple-value-list ,expr) (multiple-value-list ,value))) for each pair of elements.
+If the value is a (values a b * d *) form then the elements at * are not compared."
+  (with-unique-names (expr-result)
+    `(progn
+      ,@(loop for (expr value) on args by #'cddr
+              do (assert (and expr value))
+              if (and (consp value)
+                      (eq (car value) 'values))
+              collect `(let ((,expr-result (multiple-value-list ,expr)))
+                        ,@(loop for cell = (rest (copy-list value)) then (cdr cell)
+                                for i from 0
+                                while cell
+                                when (eq (car cell) '*)
+                                collect `(setf (elt ,expr-result ,i) nil)
+                                and do (setf (car cell) nil))
+                        (is (equal ,expr-result (multiple-value-list ,value))))
+              else collect `(is (equal ,expr ,value))))))
+
 (defmacro is-true (condition &rest reason-args)
   "Like IS this check generates a pass if CONDITION returns true
   and a failure if CONDITION returns false. Unlike IS this check

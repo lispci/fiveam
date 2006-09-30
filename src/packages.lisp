@@ -38,6 +38,7 @@
 	   #:rem-fixture
 	   ;; running checks
            #:is
+           #:is-equal
            #:is-true
            #:is-false
            #:signals
