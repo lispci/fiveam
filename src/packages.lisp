@@ -24,6 +24,7 @@
            #:make-suite
 	   #:def-suite
 	   #:in-suite
+	   #:in-suite*
 	   #:make-test
 	   #:test
 	   #:get-test
