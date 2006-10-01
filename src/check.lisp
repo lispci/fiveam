@@ -128,29 +128,55 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
           "Argument to IS must be a list, not ~S" test)
   (let (bindings effective-test default-reason-args)
     (with-unique-names (e a v)
-      (list-match-case test
-        ((not (?predicate ?expected ?actual))
-         (setf bindings (list (list e ?expected)
-                              (list a ?actual))
-               effective-test `(not (,?predicate ,e ,a))
-               default-reason-args (list "~S was ~S to ~S" a `',?predicate e)))
-        ((not (?satisfies ?value))
-         (setf bindings (list (list v ?value))
-               effective-test `(not (,?satisfies ,v))
-               default-reason-args (list  "~S satisfied ~S" v `',?satisfies)))
-        ((?predicate ?expected ?actual)
-         (setf bindings (list (list e ?expected)
-                              (list a ?actual))
-               effective-test `(,?predicate ,e ,a)
-               default-reason-args (list "~S was not ~S to ~S" a `',?predicate e)))
-        ((?satisfies ?value)
-         (setf bindings (list (list v ?value))
-               effective-test `(,?satisfies ,v)
-               default-reason-args (list "~S did not satisfy ~S" v `',?satisfies)))
-        (?_
-         (setf bindings '()
-               effective-test test
-               default-reason-args (list "No reason supplied"))))
+      (flet ((process-entry (predicate expected actual &optional negatedp)
+               ;; make sure EXPECTED is holding the entry that starts with 'values
+               (when (and (consp actual)
+                          (eq (car actual) 'values))
+                 (assert (not (and (consp expected)
+                                   (eq (car expected) 'values))) ()
+                                   "Both the expected and actual part is a values expression.")
+                 (let ((tmp expected))
+                   (setf expected actual
+                         actual tmp)))
+               (let ((setf-forms))
+                 (if (and (consp expected)
+                          (eq (car expected) 'values))
+                     (progn
+                       (setf expected (copy-list expected))
+                       (setf setf-forms (loop for cell = (rest expected) then (cdr cell)
+                                              for i from 0
+                                              while cell
+                                              when (eq (car cell) '*)
+                                              collect `(setf (elt ,a ,i) nil)
+                                              and do (setf (car cell) nil)))
+                       (setf bindings (list (list e `(list ,@(rest expected)))
+                                            (list a `(multiple-value-list ,actual)))))
+                     (setf bindings (list (list e expected)
+                                          (list a actual))))
+                 (setf effective-test `(progn
+                                        ,@setf-forms
+                                        ,(if negatedp
+                                             `(not (,predicate ,e ,a))
+                                             `(,predicate ,e ,a)))))))
+        (list-match-case test
+          ((not (?predicate ?expected ?actual))
+           (process-entry ?predicate ?expected ?actual t)
+           (setf default-reason-args (list "~S was ~S to ~S" a `',?predicate e)))
+          ((not (?satisfies ?value))
+           (setf bindings (list (list v ?value))
+                 effective-test `(not (,?satisfies ,v))
+                 default-reason-args (list  "~S satisfied ~S" v `',?satisfies)))
+          ((?predicate ?expected ?actual)
+           (process-entry ?predicate ?expected ?actual)
+           (setf default-reason-args (list "~S was not ~S to ~S" a `',?predicate e)))
+          ((?satisfies ?value)
+           (setf bindings (list (list v ?value))
+                 effective-test `(,?satisfies ,v)
+                 default-reason-args (list "~S did not satisfy ~S" v `',?satisfies)))
+          (?_
+           (setf bindings '()
+                 effective-test test
+                 default-reason-args (list "No reason supplied")))))
       `(let ,bindings
          (if ,effective-test
              (add-result 'test-passed :test-expr ',test)
