@@ -41,7 +41,9 @@ suite) in the suite."))
 
 (defclass test-case (testable-object)
   ((test-lambda :initarg :test-lambda :accessor test-lambda
-		:documentation "The function to run."))
+		:documentation "The function to run.")
+   (runtime-package :initarg :runtime-package :accessor runtime-package
+                    :documentation "By default it stores *package* from the time this test was defined (macroexpanded)."))
   (:documentation "A test case is a single, named, collection of
 checks.
 

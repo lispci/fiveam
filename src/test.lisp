@@ -54,6 +54,7 @@ SUITE defaults to the current value of *SUITE*."
       `(progn
 	 (setf (get-test ',name) (make-instance 'test-case
                                                 :name ',name
+                                                :runtime-package ,*package*
                                                 :test-lambda
                                                 (lambda ()
                                                   (funcall (compile nil '(lambda () ,@body))))
