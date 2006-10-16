@@ -12,6 +12,7 @@
 ;;;; collection of tests and test suites.
 
 (deflookup-table test
+  :at-redefinition nil
   :documentation "Lookup table mapping test (and test suite)
   names to objects.")
 
