@@ -235,6 +235,21 @@ producs objects."
        repeat (funcall length)
        collect (funcall elements))))
 
+(defun gen-tree (&key (size 20)
+                      (elements (gen-integer :min -10 :max 10)))
+  "Returns a generator which producs random trees. SIZE control
+the approximate size of the tree, but don't try anything above
+ 30, you have been warned. ELEMENTS must be a generator which
+will produce the elements."
+  (labels ((rec (&optional (current-depth 0))
+             (let ((key (random (+ 3 (- depth current-depth)))))
+               (cond ((> key 2)
+                      (list (rec (+ current-depth 1))
+                            (rec (+ current-depth 1))))
+                     (t (funcall elements))))))
+    (lambda ()
+      (rec))))
+
 (defun gen-buffer (&key (length (gen-integer :min 0 :max 50))
                         (element-type '(unsigned-byte 8))
                         (elements (gen-integer :min 0 :max (1- (expt 2 8)))))

@@ -53,6 +53,7 @@
            #:gen-character
            #:gen-string
            #:gen-list
+           #:gen-tree
            #:gen-buffer
            #:gen-one-element
 	   ;; running tests
