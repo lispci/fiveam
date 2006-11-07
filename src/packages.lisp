@@ -62,6 +62,7 @@
            #:explain
            #:explain!
            #:run!
+           #:debug!
            #:!
            #:!!
            #:!!!

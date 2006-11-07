@@ -208,6 +208,12 @@ run."))
 detailed-text-explainer with output going to *test-dribble*"
   (explain (make-instance 'detailed-text-explainer) result-list *test-dribble*))
 
+(defun debug! (&optional (test-spec *suite*))
+  "Calls (run! test-spec) but enters the debugger if any kind of error happens."
+  (let ((*debug-on-error* t)
+        (*debug-on-failure* t))
+    (run! test-spec)))
+
 (defun run (test-spec)
     "Run the test specified by TEST-SPEC.
 
