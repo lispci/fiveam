@@ -242,7 +242,7 @@ the approximate size of the tree, but don't try anything above
  30, you have been warned. ELEMENTS must be a generator which
 will produce the elements."
   (labels ((rec (&optional (current-depth 0))
-             (let ((key (random (+ 3 (- depth current-depth)))))
+             (let ((key (random (+ 3 (- size current-depth)))))
                (cond ((> key 2)
                       (list (rec (+ current-depth 1))
                             (rec (+ current-depth 1))))
