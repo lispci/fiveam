@@ -19,7 +19,7 @@
 
 (defpackage :it.bese.FiveAM
   (:use :common-lisp :it.bese.arnesi)
-  (:nicknames :5am)
+  (:nicknames :5am :fiveam)
   (:export ;; creating tests and test-suites
            #:make-suite
 	   #:def-suite
