@@ -111,9 +111,8 @@ when appropiate."))
   "The DWIM checking operator.
 
 If TEST returns a true value a test-passed result is generated,
-otherwise a test-failure result is generated and the reason,
-unless REASON-ARGS is provided, is generated based on the form of
-TEST:
+otherwise a test-failure result is generated. The reason, unless
+REASON-ARGS is provided, is generated based on the form of TEST:
 
  (predicate expected actual) - Means that we want to check
  whether, according to PREDICATE, the ACTUAL value is
@@ -122,7 +121,8 @@ TEST:
  (predicate value) - Means that we want to ensure that VALUE
  satisfies PREDICATE.
 
-Wrapping the TEST form in a NOT simply preducse a negated reason string."
+ Wrapping the TEST form in a NOT simply preducse a negated reason
+ string."
   (assert (listp test)
           (test)
           "Argument to IS must be a list, not ~S" test)
@@ -161,22 +161,30 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
         (list-match-case test
           ((not (?predicate ?expected ?actual))
            (process-entry ?predicate ?expected ?actual t)
-           (setf default-reason-args (list "~S was ~S to ~S" a `',?predicate e)))
+           (setf default-reason-args
+                 (list "~S evaluated to ~S, which is ~S to ~S (it should not be)"
+                       `',?actual a `',?predicate e)))
           ((not (?satisfies ?value))
            (setf bindings (list (list v ?value))
                  effective-test `(not (,?satisfies ,v))
-                 default-reason-args (list  "~S satisfied ~S" v `',?satisfies)))
+                 default-reason-args
+                 (list "~S evaluated to ~S, which satisfies ~S (it should not)"
+                       `',?value v `',?satisfies)))
           ((?predicate ?expected ?actual)
            (process-entry ?predicate ?expected ?actual)
-           (setf default-reason-args (list "~S was not ~S to ~S" a `',?predicate e)))
+           (setf default-reason-args
+                 (list "~S evaluated to ~S, which is not ~S to ~S."
+                       `',?actual a `',?predicate e)))
           ((?satisfies ?value)
            (setf bindings (list (list v ?value))
                  effective-test `(,?satisfies ,v)
-                 default-reason-args (list "~S did not satisfy ~S" v `',?satisfies)))
+                 default-reason-args
+                 (list "~S evaluated to ~S, which does not satisfy ~S"
+                       `',?value v `',?satisfies)))
           (?_
            (setf bindings '()
                  effective-test test
-                 default-reason-args (list "No reason supplied")))))
+                 default-reason-args (list "~S was NIL." `',test)))))
       `(let ,bindings
          (if ,effective-test
              (add-result 'test-passed :test-expr ',test)
