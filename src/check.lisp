@@ -196,7 +196,7 @@ Wrapping the TEST form in a NOT simply preducse a negated reason string."
    for each pair of elements or (is (,predicate ,expr ,value) ,@reason) for each list."
   `(progn
     ,@(if (every #'consp clauses)
-          (loop for (expected actual &rest reason) in clauses
+          (loop for (expected actual . reason) in clauses
                 collect `(is (,predicate ,expected ,actual) ,@reason))
           (progn
             (assert (evenp (list-length clauses)))
