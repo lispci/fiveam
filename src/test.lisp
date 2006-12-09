@@ -58,7 +58,8 @@ SUITE defaults to the current value of *SUITE*."
                                                 :runtime-package ,*package*
                                                 :test-lambda
                                                 (lambda ()
-                                                  (funcall (compile nil '(lambda () ,@body))))
+                                                  (funcall (let ((*package* ,*package*))
+                                                             (compile nil '(lambda () ,@body)))))
                                                 :description ,description
                                                 :depends-on ',depends-on))
 	 ,(if suite-supplied-p
