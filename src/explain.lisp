@@ -38,7 +38,7 @@
       (terpri stream)
       (when failed
         (output "Failure Details:~%")
-        (dolist (f failed)
+        (dolist (f (reverse failed))
           (output "--------------------------------~%")
           (output "~A ~@{[~A]~}: ~%" 
                   (name (test-case f))
