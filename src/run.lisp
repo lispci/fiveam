@@ -177,15 +177,18 @@ run."))
 
 (defmethod %run ((suite test-suite))
   (let ((suite-results '()))
-    (bind-run-state ((result-list '()))
-      (loop for test being the hash-values of (tests suite)
-	    do (%run test)
-	    finally (setf suite-results result-list)))
-    (setf (status suite) (every (lambda (res)
-				  (typep res 'test-passed))
-				  suite-results))
-    (with-run-state (result-list)
-      (setf result-list (nconc result-list suite-results)))))
+    (unwind-protect
+         (bind-run-state ((result-list '()))
+           (unwind-protect
+                (loop for test being the hash-values of (tests suite)
+                      do (%run test))
+             (setf suite-results result-list))
+           (setf (status suite)
+                 (every (lambda (res)
+                          (typep res 'test-passed))
+                        suite-results)))
+      (with-run-state (result-list)
+        (setf result-list (nconc result-list suite-results))))))
 
 (defmethod %run ((test-name symbol))
   (when-bind test (get-test test-name)
@@ -215,20 +218,21 @@ detailed-text-explainer with output going to *test-dribble*"
     (run! test-spec)))
 
 (defun run (test-spec)
-    "Run the test specified by TEST-SPEC.
+  "Run the test specified by TEST-SPEC.
 
 TEST-SPEC can be either a symbol naming a test or test suite, or
 a testable-object object. This function changes the operations
 performed by the !, !! and !!! functions."
-    (psetf *!* (lambda ()
-		 (loop for test being the hash-keys of *test*
-		    do (setf (status (get-test test)) :unknown))
-		 (bind-run-state ((result-list '()))
-		   (%run test-spec)
-		   result-list))
-	   *!!* *!*
-	   *!!!* *!!*)
-    (funcall *!*))
+  (psetf *!* (lambda ()
+               (loop for test being the hash-keys of *test*
+                     do (setf (status (get-test test)) :unknown))
+               (bind-run-state ((result-list '()))
+                 (with-simple-restart (explain "Ignore the rest of the tests and explain current results")
+                   (%run test-spec))
+                 result-list))
+         *!!* *!*
+         *!!!* *!!*)
+  (funcall *!*))
 
 (defun ! () 
   "Rerun the most recently run test and explain the results."
