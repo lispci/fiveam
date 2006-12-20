@@ -46,8 +46,9 @@ If DEPENDS-ON is a symbol it is interpreted as `(AND
 depending on another.
 
 SUITE defaults to the current value of *SUITE*."
-  (destructuring-bind (name &key depends-on (suite nil suite-supplied-p))
+  (destructuring-bind (name &key depends-on (suite nil suite-supplied-p) (compile-at :run-time))
       (ensure-list name)
+    (declare (type (member :run-time :definition-time) compile-at))
     (let (description)
       (setf description (if (stringp (car body))
 			    (pop body)
@@ -58,8 +59,10 @@ SUITE defaults to the current value of *SUITE*."
                                                 :runtime-package ,*package*
                                                 :test-lambda
                                                 (lambda ()
-                                                  (funcall (let ((*package* ,*package*))
-                                                             (compile nil '(lambda () ,@body)))))
+                                                  ,@(ecase compile-at
+                                                           (:run-time `((funcall (let ((*package* ,*package*))
+                                                                                          (compile nil '(lambda () ,@body))))))
+                                                           (:definition-time body)))
                                                 :description ,description
                                                 :depends-on ',depends-on))
 	 ,(if suite-supplied-p
