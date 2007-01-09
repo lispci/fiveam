@@ -69,7 +69,8 @@
            #:*run-test-when-defined*
 	   #:*debug-on-error*
            #:*debug-on-failure*
-           #:*verbose-failures*))
+           #:*verbose-failures*
+           #:results-status))
 
 ;;;; You can use #+5am to put your test-defining code inline with your
 ;;;; other code - and not require people to have fiveam to run your
