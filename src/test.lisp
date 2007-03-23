@@ -24,7 +24,7 @@
   "Create a test named NAME. If NAME is a list it must be of the
 form:
 
-  (name &key depends-on suite)
+  (name &key depends-on suite fixture compile-at)
 
 NAME is the symbol which names the test.
 
@@ -45,24 +45,33 @@ If DEPENDS-ON is a symbol it is interpreted as `(AND
 ,depends-on), this is accomadate the common case of one test
 depending on another.
 
-SUITE defaults to the current value of *SUITE*."
-  (destructuring-bind (name &key depends-on (suite nil suite-supplied-p) (compile-at :run-time))
+SUITE defaults to the current value of *SUITE*.
+
+FIXTURE specifies a fixtrue to wrap the body in."
+  (destructuring-bind (name &key depends-on (suite nil suite-supplied-p)
+                                 (compile-at :run-time) fixture)
       (ensure-list name)
     (declare (type (member :run-time :definition-time) compile-at))
-    (let (description)
-      (setf description (if (stringp (car body))
-			    (pop body)
-			    ""))
+    (let ((description (if (stringp (car body))
+                           (pop body)
+                           ""))
+          (effective-body (if fixture
+                              (destructuring-bind (name &rest args)
+                                  (ensure-list fixture)
+                                `((with-fixture ,name ,args ,@body)))
+                              body)))
       `(progn
 	 (setf (get-test ',name) (make-instance 'test-case
                                                 :name ',name
                                                 :runtime-package ,*package*
                                                 :test-lambda
                                                 (lambda ()
-                                                  ,@(ecase compile-at
-                                                           (:run-time `((funcall (let ((*package* ,*package*))
-                                                                                          (compile nil '(lambda () ,@body))))))
-                                                           (:definition-time body)))
+                                                  ,@ (ecase compile-at
+                                                       (:run-time `((funcall
+                                                                     (let ((*package* (find-package ',(package-name *package*))))
+                                                                       (compile nil '(lambda ()
+                                                                                      ,@effective-body))))))
+                                                       (:definition-time effective-body)))
                                                 :description ,description
                                                 :depends-on ',depends-on))
 	 ,(if suite-supplied-p
