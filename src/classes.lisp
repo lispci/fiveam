@@ -25,7 +25,11 @@
   ((tests :accessor tests :initform (make-hash-table :test 'eql)
 	  :documentation "The hash table mapping names to test
 	  objects in this suite. The values in this hash table
-	  can be either test-cases or other test-suites."))
+	  can be either test-cases or other test-suites.")
+   (default-test-args :accessor default-test-args :initform '()
+                      :initarg :default-test-args
+                      :documentation "Arguments passed to TEST
+                      macro when using this suite."))
   (:documentation "A test suite is a collection of tests or test suites.
 
 Test suites serve to organize tests into groups so that the

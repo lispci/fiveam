@@ -45,43 +45,44 @@ If DEPENDS-ON is a symbol it is interpreted as `(AND
 ,depends-on), this is accomadate the common case of one test
 depending on another.
 
-SUITE defaults to the current value of *SUITE*.
-
 FIXTURE specifies a fixtrue to wrap the body in."
-  (destructuring-bind (name &key depends-on (suite nil suite-supplied-p)
-                                 (compile-at :run-time) fixture)
-      (ensure-list name)
-    (declare (type (member :run-time :definition-time) compile-at))
-    (let ((description (if (stringp (car body))
-                           (pop body)
-                           ""))
-          (effective-body (if fixture
-                              (destructuring-bind (name &rest args)
-                                  (ensure-list fixture)
-                                `((with-fixture ,name ,args ,@body)))
-                              body)))
-      `(progn
-	 (setf (get-test ',name) (make-instance 'test-case
-                                                :name ',name
-                                                :runtime-package ,*package*
-                                                :test-lambda
-                                                (lambda ()
-                                                  ,@ (ecase compile-at
-                                                       (:run-time `((funcall
-                                                                     (let ((*package* (find-package ',(package-name *package*))))
-                                                                       (compile nil '(lambda ()
-                                                                                      ,@effective-body))))))
-                                                       (:definition-time effective-body)))
-                                                :description ,description
-                                                :depends-on ',depends-on))
-	 ,(if suite-supplied-p
-	      `(setf (gethash ',name (tests (get-test ',suite)))
-		     ',name)
-	      `(setf (gethash ',name (tests (or *suite* (get-test 'NIL))))
-		     ',name))
-         (when *run-test-when-defined*
-           (run! ',name))
-	 ',name))))
+  
+  (let* ((tmp (gensym))
+         (suite-arg (getf (cdr (ensure-list name)) :suite tmp))
+         (suite (cond
+                  ((eq tmp suite-arg) *suite*)
+                  (t (get-test suite-arg)))))
+    (when (consp name)
+      (remf (cdr name) :suite))
+    (destructuring-bind (name &key depends-on (compile-at :run-time) fixture)
+        (append (ensure-list name) (default-test-args suite))
+      (declare (type (member :run-time :definition-time) compile-at))
+      (let ((description (if (stringp (car body))
+                             (pop body)
+                             ""))
+            (effective-body (if fixture
+                                (destructuring-bind (name &rest args)
+                                    (ensure-list fixture)
+                                  `((with-fixture ,name ,args ,@body)))
+                                body)))
+        `(progn
+           (setf (get-test ',name) (make-instance 'test-case
+                                                  :name ',name
+                                                  :runtime-package ,*package*
+                                                  :test-lambda
+                                                  (lambda ()
+                                                    ,@ (ecase compile-at
+                                                         (:run-time `((funcall
+                                                                       (let ((*package* (find-package ',(package-name *package*))))
+                                                                         (compile nil '(lambda ()
+                                                                                        ,@effective-body))))))
+                                                         (:definition-time effective-body)))
+                                                  :description ,description
+                                                  :depends-on ',depends-on))
+           (setf (gethash ',name (tests ,suite)) ',name)
+           (when *run-test-when-defined*
+             (run! ',name))
+           ',name)))))
 
 (defvar *run-test-when-defined* nil
   "When non-NIL tests are run as soon as they are defined.")

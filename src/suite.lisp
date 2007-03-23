@@ -16,24 +16,28 @@
 
 ;;;; ** Creating Suits
 
-(defmacro def-suite (name &key description in)
+(defmacro def-suite (name &key description in default-test-args)
   "Define a new test-suite named NAME.
 
 IN (a symbol), if provided, causes this suite te be nested in the
 suite named by IN. NB: This macro is built on top of make-suite,
 as such it, like make-suite, will overrwrite any existing suite
-named NAME."
-  `(progn
+named NAME.
+
+DEFAULT-TEST-ARGS, if provided, will ba passed to the TEST forms
+defined in this suite."
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
      (make-suite ',name
-		 ,@(when description `(:description ,description))
-		 ,@(when in `(:in ',in)))
+                 ,@(when description `(:description ,description))
+                 ,@(when in `(:in ',in))
+                 ,@(when default-test-args `(:default-test-args ,default-test-args)))
      ',name))
 
-(defun make-suite (name &key description in)
+(defun make-suite (name &key description in default-test-args)
   "Create a new test suite object.
 
 Overides any existing suite named NAME."
-  (let ((suite (make-instance 'test-suite :name name)))
+  (let ((suite (make-instance 'test-suite :name name :default-test-args default-test-args)))
     (when description
       (setf (description suite) description))
     (loop for i in (ensure-list in)
@@ -59,7 +63,8 @@ after the execution of this form are, unless specified otherwise,
 in the test-suite named SUITE-NAME.
 
 See also: DEF-SUITE *SUITE*"
-  `(%in-suite ,suite-name))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (%in-suite ,suite-name)))
 
 (defmacro in-suite* (suite-name &key in)
   "Just like in-suite, but silently creates missing suites."

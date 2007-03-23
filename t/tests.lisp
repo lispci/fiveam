@@ -4,11 +4,16 @@
 
 (in-suite :it.bese.FiveAM)
 
-(def-suite test-suite :description "Suite for tests which should fail.")
+(def-suite test-suite
+    :description "Suite for tests which should fail."
+    :default-test-args '(:fixture null-fixture :compile-at :run-time))
 
 (defmacro with-test-results ((results test-name) &body body)
   `(let ((,results (with-*test-dribble* nil (run ',test-name))))
      ,@body))
+
+(def-fixture null-fixture ()
+  `(progn ,@(&body)))
 
 ;;;; Test the checks
 
@@ -20,7 +25,7 @@
   (is-true t)
   (is-false nil))
 
-(test (is2 :suite test-suite)
+(test (is2 :suite test-suite :fixture foo)
   (is (plusp 0))
   (is (< 0 -1))
   (is (not (plusp 1)))
