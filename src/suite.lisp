@@ -33,6 +33,11 @@ defined in this suite."
                  ,@(when default-test-args `(:default-test-args ,default-test-args)))
      ',name))
 
+(defmacro def-suite* (name &rest def-suite-args)
+  `(progn
+     (def-suite ,name ,@def-suite-args)
+     (in-suite ,name)))
+
 (defun make-suite (name &key description in default-test-args)
   "Create a new test suite object.
 
