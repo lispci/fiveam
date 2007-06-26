@@ -33,7 +33,7 @@
   (is-true nil)
   (is-false t))
 
-(test is
+(test (is :profile t)
   (with-test-results (results is1)
     (is (= 6 (length results)))
     (is (every #'test-passed-p results)))

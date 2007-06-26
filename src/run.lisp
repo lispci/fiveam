@@ -149,7 +149,10 @@ run."))
                      (restart-case
                          (let ((*readtable* (copy-readtable))
                                (*package* (runtime-package test)))
-                           (funcall (test-lambda test)))
+                           (if (collect-profiling-info test)
+                               (setf (profiling-info test)
+                                     (arnesi:collect-timing (test-lambda test)))
+                               (funcall (test-lambda test))))
                        (retest ()
                          :report (lambda (stream)
                                    (format stream "~@<Rerun the test ~S~@:>" test))
@@ -177,18 +180,22 @@ run."))
 
 (defmethod %run ((suite test-suite))
   (let ((suite-results '()))
-    (unwind-protect
-         (bind-run-state ((result-list '()))
-           (unwind-protect
-                (loop for test being the hash-values of (tests suite)
-                      do (%run test))
-             (setf suite-results result-list))
-           (setf (status suite)
-                 (every (lambda (res)
-                          (typep res 'test-passed))
-                        suite-results)))
-      (with-run-state (result-list)
-        (setf result-list (nconc result-list suite-results))))))
+    (flet ((run-tests ()
+             (loop
+                for test being the hash-values of (tests suite)
+                do (%run test))))
+      (unwind-protect
+           (bind-run-state ((result-list '()))
+             (unwind-protect
+                  (if (collect-profiling-info suite)
+                      (setf (profiling-info suite) (collect-timing #'run-tests))
+                      (run-tests)))
+             (setf suite-results result-list
+                   (status suite) (every (lambda (res)
+                                           (typep res 'test-passed))
+                                         suite-results)))
+        (with-run-state (result-list)
+          (setf result-list (nconc result-list suite-results)))))))
 
 (defmethod %run ((test-name symbol))
   (when-bind test (get-test test-name)
