@@ -50,9 +50,9 @@ FIXTURE specifies a fixtrue to wrap the body in.
 If PROFILE is T profiling information will be collected as well."
   (let* ((tmp (gensym))
          (suite-arg (getf (cdr (ensure-list name)) :suite tmp))
-         (suite (cond
-                  ((eq tmp suite-arg) *suite*)
-                  (t (get-test suite-arg)))))
+         (suite-form (cond
+                       ((eq tmp suite-arg) '*suite*)
+                       (t                  `(get-test ',suite-arg)))))
     (when (consp name)
       (remf (cdr name) :suite))
     (destructuring-bind (name &key depends-on (compile-at :run-time) fixture profile)
@@ -81,7 +81,7 @@ If PROFILE is T profiling information will be collected as well."
                                                   :description ,description
                                                   :depends-on ',depends-on
                                                   :collect-profiling-info ,profile))
-           (setf (gethash ',name (tests (get-test ',(name suite)))) ',name)
+           (setf (gethash ',name (tests ,suite-form)) ',name)
            (when *run-test-when-defined*
              (run! ',name))
            ',name)))))
