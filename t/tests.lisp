@@ -25,7 +25,7 @@
   (is-true t)
   (is-false nil))
 
-(test (is2 :suite test-suite :fixture foo)
+(test (is2 :suite test-suite :fixture null-fixture)
   (is (plusp 0))
   (is (< 0 -1))
   (is (not (plusp 1)))
