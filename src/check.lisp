@@ -229,13 +229,16 @@ REASON-ARGS is provided, is generated based on the form of TEST:
   failure otherwise. Like IS-TRUE, and unlike IS, IS-FALSE does
   not inspect CONDITION to determine what reason to give it case
   of test failure"
-  `(if ,condition
-    (process-failure
-     :reason ,(if reason-args
-                  `(format nil ,@reason-args)
-                  `(format nil "~S returned a true value" ',condition))
-     :test-expr ',condition)
-    (add-result 'test-passed :test-expr ',condition)))
+  
+  (with-unique-names (value)
+    `(let ((,value ,condition))
+       (if ,value
+           (process-failure
+            :reason ,(if reason-args
+                         `(format nil ,@reason-args)
+                         `(format nil "~S returned the value ~S, which is true" ',condition ,value ))
+            :test-expr ',condition)
+           (add-result 'test-passed :test-expr ',condition)))))
 
 (defmacro signals (condition-spec
                    &body body)
