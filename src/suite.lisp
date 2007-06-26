@@ -16,21 +16,17 @@
 
 ;;;; ** Creating Suits
 
-(defmacro def-suite (name &key description in default-test-args)
+(defmacro def-suite (name &key description in)
   "Define a new test-suite named NAME.
 
 IN (a symbol), if provided, causes this suite te be nested in the
 suite named by IN. NB: This macro is built on top of make-suite,
 as such it, like make-suite, will overrwrite any existing suite
-named NAME.
-
-DEFAULT-TEST-ARGS, if provided, will ba passed to the TEST forms
-defined in this suite."
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
+named NAME."
+  `(progn
      (make-suite ',name
                  ,@(when description `(:description ,description))
-                 ,@(when in `(:in ',in))
-                 ,@(when default-test-args `(:default-test-args ,default-test-args)))
+                 ,@(when in `(:in ',in)))
      ',name))
 
 (defmacro def-suite* (name &rest def-suite-args)
@@ -38,11 +34,11 @@ defined in this suite."
      (def-suite ,name ,@def-suite-args)
      (in-suite ,name)))
 
-(defun make-suite (name &key description in default-test-args)
+(defun make-suite (name &key description in)
   "Create a new test suite object.
 
 Overides any existing suite named NAME."
-  (let ((suite (make-instance 'test-suite :name name :default-test-args default-test-args)))
+  (let ((suite (make-instance 'test-suite :name name)))
     (when description
       (setf (description suite) description))
     (loop for i in (ensure-list in)

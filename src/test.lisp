@@ -56,7 +56,7 @@ If PROFILE is T profiling information will be collected as well."
     (when (consp name)
       (remf (cdr name) :suite))
     (destructuring-bind (name &key depends-on (compile-at :run-time) fixture profile)
-        (append (ensure-list name) (default-test-args suite))
+        (ensure-list name)
       (declare (type (member :run-time :definition-time) compile-at))
       (let ((description (if (stringp (car body))
                              (pop body)

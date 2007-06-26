@@ -4,9 +4,7 @@
 
 (in-suite :it.bese.FiveAM)
 
-(def-suite test-suite
-    :description "Suite for tests which should fail."
-    :default-test-args '(:fixture null-fixture :compile-at :run-time))
+(def-suite test-suite :description "Suite for tests which should fail.")
 
 (defmacro with-test-results ((results test-name) &body body)
   `(let ((,results (with-*test-dribble* nil (run ',test-name))))
