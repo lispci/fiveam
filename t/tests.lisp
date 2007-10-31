@@ -174,8 +174,9 @@
   (with-test-results (results dep-with-symbol-dependencies-not-met)
     (is (some #'test-skipped-p results)))
 
+  ;; No failure here, because it means the test was run.
   (with-test-results (results dep-with-symbol-depends-on-failed-dependency)
-    (is (some #'test-skipped-p results))))
+    (is (not (some #'test-failure-p results)))))
 
 
 ;;;; test for-all
