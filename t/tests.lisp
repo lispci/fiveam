@@ -149,6 +149,37 @@
   (signals circular-dependency
     (run 'circular-2)))
 
+;;;; dependencies with symbol
+(test (dep-with-symbol-first :suite test-suite)
+  (pass))
+
+(test (dep-with-symbol-dependencies-not-met :depends-on (not dep-with-symbol-first)
+                                            :suite test-suite)
+  (fail "Error in the test of the test, this should not ever happen"))
+
+(test (dep-with-symbol-depends-on-ok :depends-on dep-with-symbol-first :suite test-suite)
+  (pass))
+
+(test (dep-with-symbol-depends-on-failed-dependency :depends-on dep-with-symbol-dependencies-not-met
+                                                    :suite test-suite)
+  (fail "No, I should not be tested becuase I depend on a test that in its turn has a failed dependecy."))
+
+(test dependencies-with-symbol
+  (with-test-results (results dep-with-symbol-first)
+    (is (some #'test-passed-p results)))
+
+  (with-test-results (results dep-with-symbol-depends-on-ok)
+    (is (some #'test-passed-p results)))
+
+  (with-test-results (results dep-with-symbol-dependencies-not-met)
+    (is (some #'test-skipped-p results)))
+
+  (with-test-results (results dep-with-symbol-depends-on-failed-dependency)
+    (is (some #'test-skipped-p results))))
+
+
+;;;; test for-all
+
 (test gen-integer
   (for-all ((a (gen-integer)))
     (is (integerp a))))
