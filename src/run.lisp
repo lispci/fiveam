@@ -66,7 +66,7 @@ run."))
     (:unknown
      (setf (status test) :resolving)
      (if (or (not (depends-on test))
-             (resolve-dependencies (depends-on test)))
+             (eql t (resolve-dependencies (depends-on test))))
          (progn
            (run-test-lambda test)
            (status test))
