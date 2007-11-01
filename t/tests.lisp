@@ -149,6 +149,33 @@
   (signals circular-dependency
     (run 'circular-2)))
 
+
+(def-suite before-test-suite :description "Suite for before test")
+
+(test (before-0 :suite before-test-suite)
+  (pass))
+
+(test (before-1 :depends-on (:before before-0)
+                :suite before-test-suite)
+  (fail))
+
+(def-suite before-test-suite-2 :description "Suite for before test")
+
+(test (before-2 :depends-on (:before before-3)
+                :suite before-test-suite-2)
+  (pass))
+
+(test (before-3 :suite before-test-suite-2)
+  (pass))
+
+(test before
+  (with-test-results (results before-test-suite)
+    (is (some #'test-skipped-p results)))
+  
+  (with-test-results (results before-test-suite-2)
+    (is (every #'test-passed-p results))))
+
+
 ;;;; dependencies with symbol
 (test (dep-with-symbol-first :suite test-suite)
   (pass))
