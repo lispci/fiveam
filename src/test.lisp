@@ -69,7 +69,9 @@ If PROFILE is T profiling information will be collected as well."
         `(progn
            (setf (get-test ',name) (make-instance 'test-case
                                                   :name ',name
-                                                  :runtime-package ,*package*
+                                                  :runtime-package
+                                                  #-ecl ,*package*
+                                                  #+ecl (find-package ,(package-name *package*))
                                                   :test-lambda
                                                   (lambda ()
                                                     ,@ (ecase compile-at
