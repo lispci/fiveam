@@ -200,16 +200,16 @@ CODE must be a generator of random integers. ALPHANUMERICP, if
 non-NIL, limits the returned chars to those which pass
 alphanumericp."
   (lambda ()
-    (if alphanumericp            
-        (loop
-           for count upfrom 0
-           for char = (code-char (funcall code))
-           until (alphanumericp char)
-           when (= 1000 count)
-             do (error "After 1000 iterations ~S has still not generated an alphanumeric character :(."
-                       code)
-           finally (return char))
-        (code-char (funcall code)))))
+    (loop
+       for count upfrom 0
+       for char = (code-char (funcall code))
+       until (and char
+                  (or (not alphanumericp)
+                      (alphanumericp char)))
+       when (= 1000 count)
+       do (error "After 1000 iterations ~S has still not generated ~:[a valid~;an alphanumeric~] character :(."
+                 code alphanumericp)
+       finally (return char))))
 
 (defun gen-string (&key (length (gen-integer :min 0 :max 80))
                         (elements (gen-character))
