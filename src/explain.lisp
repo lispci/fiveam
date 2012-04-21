@@ -1,6 +1,6 @@
 ;; -*- lisp -*-
 
-(in-package :it.bese.FiveAM)
+(in-package :it.bese.fiveam)
 
 ;;;; * Analyzing the results
 

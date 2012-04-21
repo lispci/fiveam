@@ -3,10 +3,10 @@
 (defpackage :it.bese.FiveAM.system
   (:use :common-lisp
         :asdf))
+(defsystem :fiveam
 
 (in-package :it.bese.FiveAM.system)
 
-(defsystem :FiveAM
     :author "Edward Marco Baringer <mb@bese.it>"
     :properties ((:test-suite-name . :it.bese.fiveam))
     :components ((:static-file "fiveam.asd")

@@ -2,13 +2,13 @@
 
 ;;;; * FiveAM Example (poor man's tutorial)
 
-(asdf:oos 'asdf:load-op :FiveAM)
+(asdf:oos 'asdf:load-op :fiveam)
 
-(defpackage :it.bese.FiveAM.example
+(defpackage :it.bese.fiveam.example
   (:use :common-lisp
-	:it.bese.FiveAM))
+	:it.bese.fiveam))
 
-(in-package :it.bese.FiveAM.example)
+(in-package :it.bese.fiveam.example)
 
 ;;;; First we need some functions to test.
 

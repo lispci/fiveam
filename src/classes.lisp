@@ -1,6 +1,6 @@
 ;; -*- lisp -*-
 
-(in-package :it.bese.FiveAM)
+(in-package :it.bese.fiveam)
 
 (defclass testable-object ()
   ((name :initarg :name :accessor name
