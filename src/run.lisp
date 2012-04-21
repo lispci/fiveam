@@ -89,6 +89,8 @@ run."))
          (setf (status test) :circular))))
     (t (status test))))
 
+(defgeneric resolve-dependencies (depends-on))
+
 (defmethod resolve-dependencies ((depends-on symbol))
   "A test which depends on a symbol is interpreted as `(AND
   ,DEPENDS-ON)."
@@ -127,6 +129,8 @@ run."))
   (bind-run-state ((result-list '()))
     (funcall test-lambda)
     result-list))
+
+(defgeneric run-test-lambda (test))
 
 (defmethod run-test-lambda ((test test-case))
   (with-run-state (result-list)
