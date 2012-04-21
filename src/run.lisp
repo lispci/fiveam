@@ -154,8 +154,9 @@ run."))
                          (let ((*readtable* (copy-readtable))
                                (*package* (runtime-package test)))
                            (if (collect-profiling-info test)
-                               (setf (profiling-info test)
-                                     (arnesi:collect-timing (test-lambda test)))
+                               ;; Timing info doesn't get collected ATM, we need a portable library
+                               ;; (setf (profiling-info test) (collect-timing (test-lambda test)))
+                               (funcall (test-lambda test))
                                (funcall (test-lambda test))))
                        (retest ()
                          :report (lambda (stream)
@@ -192,7 +193,9 @@ run."))
            (bind-run-state ((result-list '()))
              (unwind-protect
                   (if (collect-profiling-info suite)
-                      (setf (profiling-info suite) (collect-timing #'run-tests))
+                      ;; Timing info doesn't get collected ATM, we need a portable library
+                      ;; (setf (profiling-info suite) (collect-timing #'run-tests))
+                      (run-tests)
                       (run-tests)))
              (setf suite-results result-list
                    (status suite) (every (lambda (res)
@@ -202,7 +205,7 @@ run."))
           (setf result-list (nconc result-list suite-results)))))))
 
 (defmethod %run ((test-name symbol))
-  (when-bind test (get-test test-name)
+  (when-let (test (get-test test-name))
     (%run test)))
 
 (defvar *initial-!* (lambda () (format t "Haven't run that many tests yet.~%")))

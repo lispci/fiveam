@@ -11,10 +11,19 @@
 ;;;; collection of checks which can be run and a test suite is a named
 ;;;; collection of tests and test suites.
 
-(deflookup-table test
-  :at-redefinition nil
-  :documentation "Lookup table mapping test (and test suite)
+(defvar *test*
+  (make-hash-table :test 'eql)
+  "Lookup table mapping test (and test suite)
   names to objects.")
+
+(defun get-test (key &optional default)
+  (gethash key *test* default))
+
+(defun (setf get-test) (value key)
+  (setf (gethash key *test*) value))
+
+(defun rem-test (key)
+  (remhash key *test*))
 
 (defun test-names ()
   (loop for test being the hash-keys of *test*

@@ -17,8 +17,8 @@
 ;;;; developer to quickly and easily redefine, change, remove and run
 ;;;; tests.
 
-  (:use :common-lisp :it.bese.arnesi)
 (defpackage :it.bese.fiveam
+  (:use :common-lisp :alexandria)
   (:nicknames :5am :fiveam)
   (:export
    ;; creating tests and test-suites

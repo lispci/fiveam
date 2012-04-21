@@ -72,9 +72,9 @@ See also: DEF-SUITE *SUITE*"
   `(%in-suite ,suite-name :in ,in :fail-on-error nil))
 
 (defmacro %in-suite (suite-name &key (fail-on-error t) in)
-  (with-unique-names (suite)
+  (with-gensyms (suite)
     `(progn
-       (if-bind ,suite (get-test ',suite-name)
+       (if-let (,suite (get-test ',suite-name))
          (setf *suite* ,suite)
          (progn
            (when ,fail-on-error

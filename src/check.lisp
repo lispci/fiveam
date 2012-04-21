@@ -127,7 +127,7 @@ REASON-ARGS is provided, is generated based on the form of TEST:
           (test)
           "Argument to IS must be a list, not ~S" test)
   (let (bindings effective-test default-reason-args)
-    (with-unique-names (e a v)
+    (with-gensyms (e a v)
       (flet ((process-entry (predicate expected actual &optional negatedp)
                ;; make sure EXPECTED is holding the entry that starts with 'values
                (when (and (consp actual)
@@ -229,8 +229,8 @@ REASON-ARGS is provided, is generated based on the form of TEST:
   failure otherwise. Like IS-TRUE, and unlike IS, IS-FALSE does
   not inspect CONDITION to determine what reason to give it case
   of test failure"
-  
-  (with-unique-names (value)
+
+  (with-gensyms (value)
     `(let ((,value ,condition))
        (if ,value
            (process-failure

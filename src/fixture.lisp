@@ -13,9 +13,24 @@
 ;;;; 'fixture' is so common in testing frameworks we've provided a
 ;;;; wrapper around defmacro for this purpose.
 
-(deflookup-table fixture
-  :documentation "Lookup table mapping fixture names to fixture
+(defvar *fixture*
+  (make-hash-table :test 'eql)
+  "Lookup table mapping fixture names to fixture
   objects.")
+
+(defun get-fixture (key &optional default)
+  (gethash key *fixture* default))
+
+(defun (setf get-fixture) (value key)
+  (when (gethash key *fixture*)
+    (warn "Redefining ~A in deflookup-table named ~S"
+          (let ((*package* (find-package :keyword)))
+            (format nil "~S" key))
+          'fixture))
+  (setf (gethash key *fixture*) value))
+
+(defun rem-fixture (key)
+  (remhash key *fixture*))
 
 (defmacro def-fixture (name args &body body)
   "Defines a fixture named NAME. A fixture is very much like a

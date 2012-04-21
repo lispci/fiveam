@@ -66,7 +66,7 @@ Examples:
   (for-all (((a b) (gen-two-integers)))
     (is (integerp a))
     (is (integerp b)))"
-  (with-unique-names (test-lambda-args)
+  (with-gensyms (test-lambda-args)
     `(perform-random-testing
       (list ,@(mapcar #'second bindings))
       (lambda (,test-lambda-args)
