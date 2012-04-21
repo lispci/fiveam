@@ -20,57 +20,58 @@
 (defpackage :it.bese.FiveAM
   (:use :common-lisp :it.bese.arnesi)
   (:nicknames :5am :fiveam)
-  (:export ;; creating tests and test-suites
-           #:make-suite
-	   #:def-suite
-	   #:in-suite
-	   #:in-suite*
-	   #:make-test
-	   #:test
-	   #:get-test
-	   #:rem-test
-           #:test-names
-	   ;; fixtures
-	   #:make-fixture
-	   #:def-fixture
-	   #:with-fixture
-	   #:get-fixture
-	   #:rem-fixture
-	   ;; running checks
-           #:is
-           #:is-every
-           #:is-true
-           #:is-false
-           #:signals
-           #:finishes
-           #:skip
-	   #:pass
-	   #:fail
-	   #:*test-dribble*
-           #:for-all
-           #:gen-integer
-           #:gen-float
-           #:gen-character
-           #:gen-string
-           #:gen-list
-           #:gen-tree
-           #:gen-buffer
-           #:gen-one-element
-	   ;; running tests
-           #:run
-           #:run-all-tests
-           #:explain
-           #:explain!
-           #:run!
-           #:debug!
-           #:!
-           #:!!
-           #:!!!
-           #:*run-test-when-defined*
-	   #:*debug-on-error*
-           #:*debug-on-failure*
-           #:*verbose-failures*
-           #:results-status))
+  (:export
+   ;; creating tests and test-suites
+   #:make-suite
+   #:def-suite
+   #:in-suite
+   #:in-suite*
+   #:make-test
+   #:test
+   #:get-test
+   #:rem-test
+   #:test-names
+   ;; fixtures
+   #:make-fixture
+   #:def-fixture
+   #:with-fixture
+   #:get-fixture
+   #:rem-fixture
+   ;; running checks
+   #:is
+   #:is-every
+   #:is-true
+   #:is-false
+   #:signals
+   #:finishes
+   #:skip
+   #:pass
+   #:fail
+   #:*test-dribble*
+   #:for-all
+   #:gen-integer
+   #:gen-float
+   #:gen-character
+   #:gen-string
+   #:gen-list
+   #:gen-tree
+   #:gen-buffer
+   #:gen-one-element
+   ;; running tests
+   #:run
+   #:run-all-tests
+   #:explain
+   #:explain!
+   #:run!
+   #:debug!
+   #:!
+   #:!!
+   #:!!!
+   #:*run-test-when-defined*
+   #:*debug-on-error*
+   #:*debug-on-failure*
+   #:*verbose-failures*
+   #:results-status))
 
 ;;;; You can use #+5am to put your test-defining code inline with your
 ;;;; other code - and not require people to have fiveam to run your
@@ -100,15 +101,15 @@
 ;;;; ** COPYRIGHT
 
 ;;;; Copyright (c) 2002-2003, Edward Marco Baringer
-;;;; All rights reserved. 
- 
+;;;; All rights reserved.
+
 ;;;; Redistribution and use in source and binary forms, with or without
 ;;;; modification, are permitted provided that the following conditions are
 ;;;; met:
- 
+
 ;;;;  - Redistributions of source code must retain the above copyright
 ;;;;    notice, this list of conditions and the following disclaimer.
- 
+
 ;;;;  - Redistributions in binary form must reproduce the above copyright
 ;;;;    notice, this list of conditions and the following disclaimer in the
 ;;;;    documentation and/or other materials provided with the distribution.
@@ -116,7 +117,7 @@
 ;;;;  - Neither the name of Edward Marco Baringer, nor BESE, nor the names
 ;;;;    of its contributors may be used to endorse or promote products
 ;;;;    derived from this software without specific prior written permission.
- 
+
 ;;;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

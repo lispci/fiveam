@@ -6,7 +6,7 @@
 
 ;;;; While executing checks and collecting the results is the core job
 ;;;; of a testing framework it is also important to be able to
-;;;; organize checks into groups, FiveAM provides two mechanisms for
+;;;; organize checks into groups, fiveam provides two mechanisms for
 ;;;; organizing checks: tests and test suites. A test is a named
 ;;;; collection of checks which can be run and a test suite is a named
 ;;;; collection of tests and test suites.
@@ -67,22 +67,21 @@ If PROFILE is T profiling information will be collected as well."
                                   `((with-fixture ,name ,args ,@body)))
                                 body)))
         `(progn
-           (setf (get-test ',name) (make-instance 'test-case
-                                                  :name ',name
-                                                  :runtime-package
-                                                  #-ecl ,*package*
-                                                  #+ecl (find-package ,(package-name *package*))
-                                                  :test-lambda
-                                                  (lambda ()
-                                                    ,@ (ecase compile-at
-                                                         (:run-time `((funcall
-                                                                       (let ((*package* (find-package ',(package-name *package*))))
-                                                                         (compile nil '(lambda ()
-                                                                                        ,@effective-body))))))
-                                                         (:definition-time effective-body)))
-                                                  :description ,description
-                                                  :depends-on ',depends-on
-                                                  :collect-profiling-info ,profile))
+           (setf (get-test ',name)
+                 (make-instance 'test-case
+                                :name ',name
+                                :runtime-package (find-package ,(package-name *package*))
+                                :test-lambda
+                                (lambda ()
+                                  ,@ (ecase compile-at
+                                       (:run-time `((funcall
+                                                     (let ((*package* (find-package ',(package-name *package*))))
+                                                       (compile nil '(lambda ()
+                                                                      ,@effective-body))))))
+                                       (:definition-time effective-body)))
+                                :description ,description
+                                :depends-on ',depends-on
+                                :collect-profiling-info ,profile))
            (setf (gethash ',name (tests ,suite-form)) ',name)
            (when *run-test-when-defined*
              (run! ',name))
@@ -92,15 +91,15 @@ If PROFILE is T profiling information will be collected as well."
   "When non-NIL tests are run as soon as they are defined.")
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
-;; All rights reserved. 
-;; 
+;; All rights reserved.
+;;
 ;; Redistribution and use in source and binary forms, with or without
 ;; modification, are permitted provided that the following conditions are
 ;; met:
-;; 
+;;
 ;;  - Redistributions of source code must retain the above copyright
 ;;    notice, this list of conditions and the following disclaimer.
-;; 
+;;
 ;;  - Redistributions in binary form must reproduce the above copyright
 ;;    notice, this list of conditions and the following disclaimer in the
 ;;    documentation and/or other materials provided with the distribution.
@@ -108,7 +107,7 @@ If PROFILE is T profiling information will be collected as well."
 ;;  - Neither the name of Edward Marco Baringer, nor BESE, nor the names
 ;;    of its contributors may be used to endorse or promote products
 ;;    derived from this software without specific prior written permission.
-;; 
+;;
 ;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

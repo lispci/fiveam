@@ -29,7 +29,7 @@
 
 ;;;; ** Types of test results
 
-;;;; Every check produces a result object. 
+;;;; Every check produces a result object.
 
 (defclass test-result ()
   ((reason :accessor reason :initarg :reason :initform "no reason given")
@@ -58,9 +58,9 @@
 
 (defmacro process-failure (&rest args)
   `(progn
-    (with-simple-restart (ignore-failure "Continue the test run.")
-      (error 'check-failure ,@args))
-    (add-result 'test-failure ,@args)))
+     (with-simple-restart (ignore-failure "Continue the test run.")
+       (error 'check-failure ,@args))
+     (add-result 'test-failure ,@args)))
 
 (defclass test-failure (test-result)
   ()
@@ -97,10 +97,10 @@ when appropiate."))
     (let ((result (apply #'make-instance result-type
                          (append make-instance-args (list :test-case current-test)))))
       (etypecase result
-	(test-passed  (format *test-dribble* "."))
+        (test-passed  (format *test-dribble* "."))
         (unexpected-test-failure (format *test-dribble* "X"))
-	(test-failure (format *test-dribble* "f"))
-	(test-skipped (format *test-dribble* "s")))
+        (test-failure (format *test-dribble* "f"))
+        (test-skipped (format *test-dribble* "s")))
       (push result result-list))))
 
 ;;;; ** The check operators
@@ -154,10 +154,10 @@ REASON-ARGS is provided, is generated based on the form of TEST:
                      (setf bindings (list (list e expected)
                                           (list a actual))))
                  (setf effective-test `(progn
-                                        ,@setf-forms
-                                        ,(if negatedp
-                                             `(not (,predicate ,e ,a))
-                                             `(,predicate ,e ,a)))))))
+                                         ,@setf-forms
+                                         ,(if negatedp
+                                              `(not (,predicate ,e ,a))
+                                              `(,predicate ,e ,a)))))))
         (list-match-case test
           ((not (?predicate ?expected ?actual))
            (process-entry ?predicate ?expected ?actual t)
@@ -203,13 +203,13 @@ REASON-ARGS is provided, is generated based on the form of TEST:
   "The input is either a list of lists, or a list of pairs. Generates (is (,predicate ,expr ,value))
    for each pair of elements or (is (,predicate ,expr ,value) ,@reason) for each list."
   `(progn
-    ,@(if (every #'consp clauses)
-          (loop for (expected actual . reason) in clauses
-                collect `(is (,predicate ,expected ,actual) ,@reason))
-          (progn
-            (assert (evenp (list-length clauses)))
-            (loop for (expr value) on clauses by #'cddr
-                  collect `(is (,predicate ,expr ,value)))))))
+     ,@(if (every #'consp clauses)
+           (loop for (expected actual . reason) in clauses
+                 collect `(is (,predicate ,expected ,actual) ,@reason))
+           (progn
+             (assert (evenp (list-length clauses)))
+             (loop for (expr value) on clauses by #'cddr
+                   collect `(is (,predicate ,expr ,value)))))))
 
 (defmacro is-true (condition &rest reason-args)
   "Like IS this check generates a pass if CONDITION returns true
@@ -217,12 +217,12 @@ REASON-ARGS is provided, is generated based on the form of TEST:
   does not inspect CONDITION to determine how to report the
   failure."
   `(if ,condition
-    (add-result 'test-passed :test-expr ',condition)
-    (process-failure
-     :reason ,(if reason-args
-                  `(format nil ,@reason-args)
-                  `(format nil "~S did not return a true value" ',condition))
-     :test-expr ',condition)))
+       (add-result 'test-passed :test-expr ',condition)
+       (process-failure
+        :reason ,(if reason-args
+                     `(format nil ,@reason-args)
+                     `(format nil "~S did not return a true value" ',condition))
+        :test-expr ',condition)))
 
 (defmacro is-false (condition &rest reason-args)
   "Generates a pass if CONDITION returns false, generates a
@@ -252,7 +252,7 @@ not evaluated."
          (handler-bind ((,condition (lambda (c)
                                       (declare (ignore c))
                                       ;; ok, body threw condition
-                                      (add-result 'test-passed 
+                                      (add-result 'test-passed
                                                   :test-expr ',condition)
                                       (return-from ,block-name t))))
            (block nil
@@ -270,18 +270,18 @@ other words if body does signal, return-from or throw this test
 fails."
   `(let ((ok nil))
      (unwind-protect
-	 (progn 
-	   ,@body
-	   (setf ok t))
+          (progn
+            ,@body
+            (setf ok t))
        (if ok
-	   (add-result 'test-passed :test-expr ',body)
+           (add-result 'test-passed :test-expr ',body)
            (process-failure
             :reason (format nil "Test didn't finish")
             :test-expr ',body)))))
 
 (defmacro pass (&rest message-args)
   "Simply generate a PASS."
-  `(add-result 'test-passed 
+  `(add-result 'test-passed
                :test-expr ',message-args
                ,@(when message-args
                        `(:reason (format nil ,@message-args)))))
@@ -294,15 +294,15 @@ fails."
             `(:reason (format nil ,@message-args)))))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
-;; All rights reserved. 
-;; 
+;; All rights reserved.
+;;
 ;; Redistribution and use in source and binary forms, with or without
 ;; modification, are permitted provided that the following conditions are
 ;; met:
-;; 
+;;
 ;;  - Redistributions of source code must retain the above copyright
 ;;    notice, this list of conditions and the following disclaimer.
-;; 
+;;
 ;;  - Redistributions in binary form must reproduce the above copyright
 ;;    notice, this list of conditions and the following disclaimer in the
 ;;    documentation and/or other materials provided with the distribution.
@@ -310,7 +310,7 @@ fails."
 ;;  - Neither the name of Edward Marco Baringer, nor BESE, nor the names
 ;;    of its contributors may be used to endorse or promote products
 ;;    derived from this software without specific prior written permission.
-;; 
+;;
 ;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

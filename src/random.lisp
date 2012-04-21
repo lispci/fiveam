@@ -77,7 +77,7 @@ Examples:
               (throw 'run-once
                 (list :guard-conditions-failed))))))))
 
-;;;; *** Implementation 
+;;;; *** Implementation
 
 ;;;; We could just make FOR-ALL a monster macro, but having FOR-ALL be
 ;;;; a preproccessor for the perform-random-testing function is
@@ -183,7 +183,7 @@ BOUND)."
                             (double-float most-positive-double-float)
                             (long-float most-positive-long-float)))
            (bound (or bound (max most-positive (- most-negative)))))
-      (coerce 
+      (coerce
        (ecase (random 2)
          (0 ;; generate a positive number
           (random (min most-positive bound)))

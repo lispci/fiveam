@@ -3,14 +3,14 @@
 (in-package :it.bese.FiveAM)
 
 (defclass testable-object ()
-  ((name :initarg :name :accessor name 
-	 :documentation "A symbol naming this test object.")
+  ((name :initarg :name :accessor name
+         :documentation "A symbol naming this test object.")
    (description :initarg :description :accessor description :initform nil
-		:documentation "The textual description of this test object.")
+                :documentation "The textual description of this test object.")
    (depends-on :initarg :depends-on :accessor depends-on :initform nil
-	       :documentation "The list of AND, OR, NOT forms specifying when to run this test.")
+               :documentation "The list of AND, OR, NOT forms specifying when to run this test.")
    (status :initarg :status :accessor status :initform :unknown
-	   :documentation "A symbol specifying the current status
+           :documentation "A symbol specifying the current status
 	   of this test. Either: T - this test (and all its
 	   dependencies, have passed. NIL - this test
 	   failed (either it failed or its dependecies weren't
@@ -34,7 +34,7 @@
 
 (defclass test-suite (testable-object)
   ((tests :accessor tests :initform (make-hash-table :test 'eql)
-	  :documentation "The hash table mapping names to test
+          :documentation "The hash table mapping names to test
 	  objects in this suite. The values in this hash table
 	  can be either test-cases or other test-suites."))
   (:documentation "A test suite is a collection of tests or test suites.
@@ -52,7 +52,7 @@ suite) in the suite."))
 
 (defclass test-case (testable-object)
   ((test-lambda :initarg :test-lambda :accessor test-lambda
-		:documentation "The function to run.")
+                :documentation "The function to run.")
    (runtime-package :initarg :runtime-package :accessor runtime-package
                     :documentation "By default it stores *package* from the time this test was defined (macroexpanded)."))
   (:documentation "A test case is a single, named, collection of
@@ -98,15 +98,15 @@ test-skipped result is added to the results."))
   ())
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
-;; All rights reserved. 
-;; 
+;; All rights reserved.
+;;
 ;; Redistribution and use in source and binary forms, with or without
 ;; modification, are permitted provided that the following conditions are
 ;; met:
-;; 
+;;
 ;;  - Redistributions of source code must retain the above copyright
 ;;    notice, this list of conditions and the following disclaimer.
-;; 
+;;
 ;;  - Redistributions in binary form must reproduce the above copyright
 ;;    notice, this list of conditions and the following disclaimer in the
 ;;    documentation and/or other materials provided with the distribution.
@@ -114,7 +114,7 @@ test-skipped result is added to the results."))
 ;;  - Neither the name of Edward Marco Baringer, nor BESE, nor the names
 ;;    of its contributors may be used to endorse or promote products
 ;;    derived from this software without specific prior written permission.
-;; 
+;;
 ;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

@@ -15,17 +15,17 @@
 (defmethod explain ((exp detailed-text-explainer) results
                     &optional (stream *test-dribble*) (recursive-depth 0))
   #| "Given a list of test results report write to stream detailed
-  human readable statistics regarding the results." |# 
+  human readable statistics regarding the results." |#
   (multiple-value-bind (num-checks passed num-passed passed%
-				   skipped num-skipped skipped%
-				   failed num-failed failed%
-				   unknown num-unknown unknown%)
+                                   skipped num-skipped skipped%
+                                   failed num-failed failed%
+                                   unknown num-unknown unknown%)
       (partition-results results)
     (declare (ignore passed))
     (flet ((output (&rest format-args)
              (format stream "~&~vT" recursive-depth)
              (apply #'format stream format-args)))
-      
+
       (when (zerop num-checks)
         (output "Didn't run anything...huh?")
         (return-from explain nil))
@@ -40,7 +40,7 @@
         (output "Failure Details:~%")
         (dolist (f (reverse failed))
           (output "--------------------------------~%")
-          (output "~A ~@{[~A]~}: ~%" 
+          (output "~A ~@{[~A]~}: ~%"
                   (name (test-case f))
                   (description (test-case f)))
           (output "     ~A.~%" (reason f))
@@ -55,7 +55,7 @@
       (when skipped
         (output "Skip Details:~%")
         (dolist (f skipped)
-          (output "~A ~@{[~A]~}: ~%" 
+          (output "~A ~@{[~A]~}: ~%"
                   (name (test-case f))
                   (description (test-case f)))
           (output "    ~A.~%" (reason f)))
@@ -64,9 +64,9 @@
 (defmethod explain ((exp simple-text-explainer) results
                     &optional (stream *test-dribble*) (recursive-depth 0))
   (multiple-value-bind (num-checks passed num-passed passed%
-				   skipped num-skipped skipped%
-				   failed num-failed failed%
-				   unknown num-unknown unknown%)
+                                   skipped num-skipped skipped%
+                                   failed num-failed failed%
+                                   unknown num-unknown unknown%)
       (partition-results results)
     (declare (ignore passed passed% skipped skipped% failed failed% unknown unknown%))
     (format stream "~&~vTRan ~D checks, ~D passed" recursive-depth num-checks num-passed)
@@ -79,37 +79,37 @@
 (defun partition-results (results-list)
   (let ((num-checks (length results-list)))
     (destructuring-bind (passed skipped failed unknown)
-	(partitionx results-list
-		    (lambda (res)
-		      (typep res 'test-passed))
-		    (lambda (res)
-		      (typep res 'test-skipped))
-		    (lambda (res)
-		      (typep res 'test-failure))
-		    t)
+        (partitionx results-list
+                    (lambda (res)
+                      (typep res 'test-passed))
+                    (lambda (res)
+                      (typep res 'test-skipped))
+                    (lambda (res)
+                      (typep res 'test-failure))
+                    t)
       (if (zerop num-checks)
-	  (values 0
-		  nil 0 0
-		  nil 0 0
-		  nil 0 0
-		  nil 0 0)
-	  (values
-	   num-checks
-	   passed (length passed) (floor (* 100 (/ (length passed) num-checks)))
-	   skipped (length skipped) (floor (* 100 (/ (length skipped) num-checks)))
-	   failed (length failed) (floor (* 100 (/ (length failed) num-checks)))
-	   unknown (length unknown) (floor (* 100 (/ (length failed) num-checks))))))))
+          (values 0
+                  nil 0 0
+                  nil 0 0
+                  nil 0 0
+                  nil 0 0)
+          (values
+           num-checks
+           passed (length passed) (floor (* 100 (/ (length passed) num-checks)))
+           skipped (length skipped) (floor (* 100 (/ (length skipped) num-checks)))
+           failed (length failed) (floor (* 100 (/ (length failed) num-checks)))
+           unknown (length unknown) (floor (* 100 (/ (length failed) num-checks))))))))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
-;; All rights reserved. 
-;; 
+;; All rights reserved.
+;;
 ;; Redistribution and use in source and binary forms, with or without
 ;; modification, are permitted provided that the following conditions are
 ;; met:
-;; 
+;;
 ;;  - Redistributions of source code must retain the above copyright
 ;;    notice, this list of conditions and the following disclaimer.
-;; 
+;;
 ;;  - Redistributions in binary form must reproduce the above copyright
 ;;    notice, this list of conditions and the following disclaimer in the
 ;;    documentation and/or other materials provided with the distribution.
@@ -117,7 +117,7 @@
 ;;  - Neither the name of Edward Marco Baringer, nor BESE, nor the names
 ;;    of its contributors may be used to endorse or promote products
 ;;    derived from this software without specific prior written permission.
-;; 
+;;
 ;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

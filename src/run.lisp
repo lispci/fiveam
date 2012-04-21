@@ -41,7 +41,7 @@
 
 (defun import-testing-symbols (package-designator)
   (import '(5am::is 5am::is-true 5am::is-false 5am::signals 5am::finishes)
-	  package-designator))
+          package-designator))
 
 (defparameter *run-queue* '()
   "List of test waiting to be run.")
@@ -76,17 +76,17 @@ run."))
                                   :test-case test
                                   :reason "Dependencies not satisfied")
                    result-list)
-             (setf (status test) :depends-not-satisfied)))))         
+             (setf (status test) :depends-not-satisfied)))))
     (:resolving
      (restart-case
          (error 'circular-dependency :test-case test)
        (skip ()
-	 :report (lambda (s)
-		   (format s "Skip the test ~S and all its dependencies." (name test)))
-	 (with-run-state (result-list)
-	   (push (make-instance 'test-skipped :reason "Circular dependencies" :test-case test)
-		 result-list))
-	 (setf (status test) :circular))))
+         :report (lambda (s)
+                   (format s "Skip the test ~S and all its dependencies." (name test)))
+         (with-run-state (result-list)
+           (push (make-instance 'test-skipped :reason "Circular dependencies" :test-case test)
+                 result-list))
+         (setf (status test) :circular))))
     (t (status test))))
 
 (defmethod resolve-dependencies ((depends-on symbol))
@@ -100,31 +100,31 @@ run."))
   (if (null depends-on)
       t
       (flet ((satisfies-depends-p (test)
-	       (funcall test (lambda (dep)
-			       (eql t (resolve-dependencies dep)))
-			     (cdr depends-on))))
-	(ecase (car depends-on)
-	  (and (satisfies-depends-p #'every))
-	  (or  (satisfies-depends-p #'some))
-	  (not (satisfies-depends-p #'notany))
+               (funcall test (lambda (dep)
+                               (eql t (resolve-dependencies dep)))
+                        (cdr depends-on))))
+        (ecase (car depends-on)
+          (and (satisfies-depends-p #'every))
+          (or  (satisfies-depends-p #'some))
+          (not (satisfies-depends-p #'notany))
           (:before (every #'(lambda (dep)
                               (let ((status (status (get-test dep))))
                                 (eql :unknown status)))
-                         (cdr depends-on)))))))
+                          (cdr depends-on)))))))
 
 (defun results-status (result-list)
   "Given a list of test results (generated while running a test)
   return true if all of the results are of type TEST-PASSED,
   faile otherwise."
   (every (lambda (res)
-	   (typep res 'test-passed))
-	 result-list))
+           (typep res 'test-passed))
+         result-list))
 
 (defun return-result-list (test-lambda)
   "Run the test function TEST-LAMBDA and return a list of all
   test results generated, does not modify the special environment
   variable RESULT-LIST."
-  (bind-run-state ((result-list '())) 
+  (bind-run-state ((result-list '()))
     (funcall test-lambda)
     result-list))
 
@@ -173,7 +173,7 @@ run."))
 
 (defgeneric %run (test-spec)
   (:documentation "Internal method for running a test. Does not
-  update the status of the tests nor the special vairables !,
+  update the status of the tests nor the special variables !,
   !!, !!!"))
 
 (defmethod %run ((test test-case))
@@ -245,28 +245,28 @@ performed by the !, !! and !!! functions."
          *!!!* *!!*)
   (funcall *!*))
 
-(defun ! () 
+(defun ! ()
   "Rerun the most recently run test and explain the results."
   (explain! (funcall *!*)))
 
-(defun !! () 
+(defun !! ()
   "Rerun the second most recently run test and explain the results."
   (explain! (funcall *!!*)))
-  
+
 (defun !!! ()
   "Rerun the third most recently run test and explain the results."
   (explain! (funcall *!!!*)))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
-;; All rights reserved. 
-;; 
+;; All rights reserved.
+;;
 ;; Redistribution and use in source and binary forms, with or without
 ;; modification, are permitted provided that the following conditions are
 ;; met:
-;; 
+;;
 ;;  - Redistributions of source code must retain the above copyright
 ;;    notice, this list of conditions and the following disclaimer.
-;; 
+;;
 ;;  - Redistributions in binary form must reproduce the above copyright
 ;;    notice, this list of conditions and the following disclaimer in the
 ;;    documentation and/or other materials provided with the distribution.
@@ -274,7 +274,7 @@ performed by the !, !! and !!! functions."
 ;;  - Neither the name of Edward Marco Baringer, nor BESE, nor the names
 ;;    of its contributors may be used to endorse or promote products
 ;;    derived from this software without specific prior written permission.
-;; 
+;;
 ;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

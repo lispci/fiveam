@@ -42,20 +42,20 @@ Overides any existing suite named NAME."
     (when description
       (setf (description suite) description))
     (loop for i in (ensure-list in)
-	  for in-suite = (get-test i)
-	  do (progn
-	       (when (null in-suite)
-		 (cerror "Create a new suite named ~A." "Unknown suite ~A." i)
-		 (setf (get-test in-suite) (make-suite i)
-		       in-suite (get-test in-suite)))
-	       (setf (gethash name (tests in-suite)) suite)))
+          for in-suite = (get-test i)
+          do (progn
+               (when (null in-suite)
+                 (cerror "Create a new suite named ~A." "Unknown suite ~A." i)
+                 (setf (get-test in-suite) (make-suite i)
+                       in-suite (get-test in-suite)))
+               (setf (gethash name (tests in-suite)) suite)))
     (setf (get-test name) suite)
     suite))
 
 ;;;; ** Managing the Current Suite
 
 (defvar *suite* (setf (get-test 'NIL)
-		      (make-suite 'NIL :description "Global Suite"))
+                      (make-suite 'NIL :description "Global Suite"))
   "The current test suite object")
 
 (defmacro in-suite (suite-name)
@@ -75,25 +75,25 @@ See also: DEF-SUITE *SUITE*"
   (with-unique-names (suite)
     `(progn
        (if-bind ,suite (get-test ',suite-name)
-           (setf *suite* ,suite)
-	   (progn
-	     (when ,fail-on-error
-               (cerror "Create a new suite named ~A."
-                       "Unkown suite ~A." ',suite-name))
-	     (setf (get-test ',suite-name) (make-suite ',suite-name :in ',in)
-		   *suite* (get-test ',suite-name))))
+         (setf *suite* ,suite)
+         (progn
+           (when ,fail-on-error
+             (cerror "Create a new suite named ~A."
+                     "Unkown suite ~A." ',suite-name))
+           (setf (get-test ',suite-name) (make-suite ',suite-name :in ',in)
+                 *suite* (get-test ',suite-name))))
        ',suite-name)))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
-;; All rights reserved. 
-;; 
+;; All rights reserved.
+;;
 ;; Redistribution and use in source and binary forms, with or without
 ;; modification, are permitted provided that the following conditions are
 ;; met:
-;; 
+;;
 ;;  - Redistributions of source code must retain the above copyright
 ;;    notice, this list of conditions and the following disclaimer.
-;; 
+;;
 ;;  - Redistributions in binary form must reproduce the above copyright
 ;;    notice, this list of conditions and the following disclaimer in the
 ;;    documentation and/or other materials provided with the distribution.
@@ -101,7 +101,7 @@ See also: DEF-SUITE *SUITE*"
 ;;  - Neither the name of Edward Marco Baringer, nor BESE, nor the names
 ;;    of its contributors may be used to endorse or promote products
 ;;    derived from this software without specific prior written permission.
-;; 
+;;
 ;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
