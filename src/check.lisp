@@ -135,9 +135,7 @@ REASON-ARGS is provided, is generated based on the form of TEST:
                  (assert (not (and (consp expected)
                                    (eq (car expected) 'values))) ()
                                    "Both the expected and actual part is a values expression.")
-                 (let ((tmp expected))
-                   (setf expected actual
-                         actual tmp)))
+                 (rotatef expected actual))
                (let ((setf-forms))
                  (if (and (consp expected)
                           (eq (car expected) 'values))
