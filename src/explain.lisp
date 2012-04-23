@@ -12,12 +12,12 @@
 ;;;; which prints a human readable summary (number passed, number
 ;;;; failed, what failed and why, etc.) of a list of test results.
 
-(defgeneric explain (explainer results &optional stream recursive-depth))
+(defgeneric explain (explainer results &optional stream recursive-depth)
+  (:documentation "Given a list of test results report write to stream detailed
+ human readable statistics regarding the results."))
 
 (defmethod explain ((exp detailed-text-explainer) results
                     &optional (stream *test-dribble*) (recursive-depth 0))
-  #| "Given a list of test results report write to stream detailed
-  human readable statistics regarding the results." |#
   (multiple-value-bind (num-checks passed num-passed passed%
                                    skipped num-skipped skipped%
                                    failed num-failed failed%
