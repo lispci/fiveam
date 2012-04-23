@@ -1,4 +1,4 @@
-;; -*- lisp -*-
+;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
 ;;;; * Introduction
 

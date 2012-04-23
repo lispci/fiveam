@@ -1,4 +1,4 @@
-;; -*- lisp -*-
+;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
 (in-package :it.bese.fiveam)
 
