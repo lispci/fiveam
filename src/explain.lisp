@@ -61,7 +61,7 @@
                   (name (test-case f))
                   (description (test-case f)))
           (output "    ~A.~%" (reason f)))
-        (terpri *test-dribble*)))))
+        (terpri stream)))))
 
 (defmethod explain ((exp simple-text-explainer) results
                     &optional (stream *test-dribble*) (recursive-depth 0))
