@@ -4,7 +4,7 @@
   :author "Edward Marco Baringer <mb@bese.it>"
   :depends-on (:alexandria)
   :pathname "src/"
-  :components ((:file "packages")
+  :components ((:file "package")
                (:file "utils" :depends-on ("packages"))
                (:file "check" :depends-on ("packages" "utils"))
                (:file "fixture" :depends-on ("packages"))
