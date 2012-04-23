@@ -242,8 +242,8 @@ TEST-SPEC can be either a symbol naming a test or test suite, or
 a testable-object object. This function changes the operations
 performed by the !, !! and !!! functions."
   (psetf *!* (lambda ()
-               (loop for test being the hash-keys of *test*
-                     do (setf (status (get-test test)) :unknown))
+               (loop :for test :being :the :hash-keys :of *test*
+                     :do (setf (status (get-test test)) :unknown))
                (bind-run-state ((result-list '()))
                  (with-simple-restart (explain "Ignore the rest of the tests and explain current results")
                    (%run test-spec))
