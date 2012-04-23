@@ -56,7 +56,7 @@ between test-cases has been detected."))
 (defgeneric run-resolving-dependencies (test)
   (:documentation "Given a dependency spec determine if the spec
 is satisfied or not, this will generally involve running other
-tests. If the dependency spec can be satisfied the test is alos
+tests. If the dependency spec can be satisfied the test is also
 run."))
 
 (defmethod run-resolving-dependencies ((test test-case))
