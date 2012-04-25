@@ -5,15 +5,15 @@
   :depends-on (:alexandria)
   :pathname "src/"
   :components ((:file "package")
-               (:file "utils" :depends-on ("packages"))
-               (:file "check" :depends-on ("packages" "utils"))
-               (:file "fixture" :depends-on ("packages"))
-               (:file "classes" :depends-on ("packages"))
-               (:file "random" :depends-on ("packages" "check"))
-               (:file "test" :depends-on ("packages" "fixture" "classes"))
-               (:file "explain" :depends-on ("packages" "utils" "check" "classes" "random"))
-               (:file "suite" :depends-on ("packages" "test" "classes"))
-               (:file "run" :depends-on ("packages" "check" "classes" "test" "explain" "suite")))
+               (:file "utils" :depends-on ("package"))
+               (:file "check" :depends-on ("package" "utils"))
+               (:file "fixture" :depends-on ("package"))
+               (:file "classes" :depends-on ("package"))
+               (:file "random" :depends-on ("package" "check"))
+               (:file "test" :depends-on ("package" "fixture" "classes"))
+               (:file "explain" :depends-on ("package" "utils" "check" "classes" "random"))
+               (:file "suite" :depends-on ("package" "test" "classes"))
+               (:file "run" :depends-on ("package" "check" "classes" "test" "explain" "suite")))
   :in-order-to ((test-op (load-op :fiveam-test)))
   :perform (test-op :after (op c)
              (funcall (intern (string '#:run!) :it.bese.fiveam)
@@ -26,6 +26,6 @@
   :components ((:file "suite")
                (:file "tests" :depends-on ("suite"))))
 
-;;;;@include "src/packages.lisp"
+;;;;@include "src/package.lisp"
 
 ;;;;@include "t/example.lisp"
