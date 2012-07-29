@@ -10,7 +10,6 @@
   `(let ((,results (with-*test-dribble* nil (run ',test-name))))
      ,@body))
 
-(rem-fixture 'null-fixture)
 (def-fixture null-fixture ()
   `(progn ,@(&body)))
 
