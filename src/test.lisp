@@ -90,43 +90,47 @@ depending on another.
 FIXTURE specifies a fixture to wrap the body in.
 
 If PROFILE is T profiling information will be collected as well."
-  (let ((suite-form
-          (if suite-p
-              `(get-test ',suite)
-              (or suite '*suite*))))
-    (check-type compile-at (member :run-time :definition-time))
-    (let ((description (if (stringp (car body))
-                           (pop body)
-                           ""))
-          (effective-body (if fixture
-                              (destructuring-bind (name &rest args)
-                                  (ensure-list fixture)
-                                `((with-fixture ,name ,args ,@body)))
-                              body))
-          (lambda-name
-            (format-symbol t "%~A-~A" '#:test name))
-          (inner-lambda-name
-            (format-symbol t "%~A-~A" '#:inner-test name)))
+  (check-type compile-at (member :run-time :definition-time))
+  (multiple-value-bind (forms decls docstring)
+      (parse-body body :documentation t :whole name)
+    (let* ((description (or docstring ""))
+           (body-forms (append decls forms))
+           (suite-form (if suite-p
+                           `(get-test ',suite)
+                           (or suite '*suite*)))
+           (effective-body (if fixture
+                               (destructuring-bind (name &rest args)
+                                   (ensure-list fixture)
+                                 `((with-fixture ,name ,args ,@body-forms)))
+                               body-forms)))
       `(progn
-         (setf (get-test ',name)
-               (make-instance 'test-case
-                              :name ',name
-                              :runtime-package (find-package ,(package-name *package*))
-                              :test-lambda
-                              (named-lambda ,lambda-name ()
-                                ,@ (ecase compile-at
-                                     (:run-time `((funcall
-                                                   (let ((*package* (find-package ',(package-name *package*))))
-                                                     (compile ',inner-lambda-name
-                                                              '(lambda () ,@effective-body))))))
-                                     (:definition-time effective-body)))
-                              :description ,description
-                              :depends-on ',depends-on
-                              :collect-profiling-info ,profile))
-         (setf (gethash ',name (tests ,suite-form)) ',name)
+         (register-test ',name ,description ',effective-body ,suite-form ',depends-on ,compile-at ,profile)
          (when *run-test-when-defined*
            (run! ',name))
          ',name))))
+
+(defun register-test (name description body suite depends-on compile-at profile)
+  (let ((lambda-name
+          (format-symbol t "%~A-~A" '#:test name))
+        (inner-lambda-name
+          (format-symbol t "%~A-~A" '#:inner-test name)))
+    (setf (get-test name)
+          (make-instance 'test-case
+                         :name name
+                         :runtime-package (find-package (package-name *package*))
+                         :test-lambda
+                         (eval
+                          `(named-lambda ,lambda-name ()
+                             ,@(ecase compile-at
+                                 (:run-time `((funcall
+                                               (let ((*package* (find-package ',(package-name *package*))))
+                                                 (compile ',inner-lambda-name
+                                                          '(lambda () ,@body))))))
+                                 (:definition-time body))))
+                         :description description
+                         :depends-on depends-on
+                         :collect-profiling-info profile))
+    (setf (gethash name (tests suite)) name)))
 
 (defvar *run-test-when-defined* nil
   "When non-NIL tests are run as soon as they are defined.")
