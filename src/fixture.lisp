@@ -22,11 +22,6 @@
   (gethash key *fixture* default))
 
 (defun (setf get-fixture) (value key)
-  (when (gethash key *fixture*)
-    (warn "Redefining ~A in deflookup-table named ~S"
-          (let ((*package* (find-package :keyword)))
-            (format nil "~S" key))
-          'fixture))
   (setf (gethash key *fixture*) value))
 
 (defun rem-fixture (key)
