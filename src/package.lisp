@@ -28,6 +28,7 @@
    #:in-suite*
    #:make-test
    #:test
+   #:def-test
    #:get-test
    #:rem-test
    #:test-names

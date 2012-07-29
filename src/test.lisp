@@ -57,48 +57,76 @@ depending on another.
 FIXTURE specifies a fixture to wrap the body in.
 
 If PROFILE is T profiling information will be collected as well."
-  (let* ((tmp (gensym))
-         (suite-arg (getf (cdr (ensure-list name)) :suite tmp))
-         (suite-form (cond
-                       ((eq tmp suite-arg) '*suite*)
-                       (t                  `(get-test ',suite-arg)))))
-    (when (consp name)
-      (remf (cdr name) :suite))
-    (destructuring-bind (name &key depends-on (compile-at :run-time) fixture profile)
-        (ensure-list name)
-      (declare (type (member :run-time :definition-time) compile-at))
-      (let ((description (if (stringp (car body))
-                             (pop body)
-                             ""))
-            (effective-body (if fixture
-                                (destructuring-bind (name &rest args)
-                                    (ensure-list fixture)
-                                  `((with-fixture ,name ,args ,@body)))
-                                body))
-            (lambda-name
-              (format-symbol t "%~A-~A" '#:test name))
-            (inner-lambda-name
-              (format-symbol t "%~A-~A" '#:inner-test name)))
-        `(progn
-           (setf (get-test ',name)
-                 (make-instance 'test-case
-                                :name ',name
-                                :runtime-package (find-package ,(package-name *package*))
-                                :test-lambda
-                                (named-lambda ,lambda-name ()
-                                  ,@ (ecase compile-at
-                                       (:run-time `((funcall
-                                                     (let ((*package* (find-package ',(package-name *package*))))
-                                                       (compile ',inner-lambda-name
-                                                                '(lambda () ,@effective-body))))))
-                                       (:definition-time effective-body)))
-                                :description ,description
-                                :depends-on ',depends-on
-                                :collect-profiling-info ,profile))
-           (setf (gethash ',name (tests ,suite-form)) ',name)
-           (when *run-test-when-defined*
-             (run! ',name))
-           ',name)))))
+  (simple-style-warning "~A is OBSOLETE! Use ~A instead."
+                        'test 'def-test)
+  (destructuring-bind (name &rest args)
+      (ensure-list name)
+    `(def-test ,name (,@args) ,@body)))
+
+(defmacro def-test (name (&key depends-on (suite '*suite* suite-p) fixture
+                            (compile-at :run-time) profile)
+                    &body body)
+  "Create a test named NAME.
+
+NAME is the symbol which names the test.
+
+DEPENDS-ON is a list of the form:
+
+ (AND . test-names) - This test is run only if all of the tests
+ in TEST-NAMES have passed, otherwise a single test-skipped
+ result is generated.
+
+ (OR . test-names) - If any of TEST-NAMES has passed this test is
+ run, otherwise a test-skipped result is generated.
+
+ (NOT test-name) - This is test is run only if TEST-NAME failed.
+
+AND, OR and NOT can be combined to produce complex dependencies.
+
+If DEPENDS-ON is a symbol it is interpreted as `(AND
+,depends-on), this is accomadate the common case of one test
+depending on another.
+
+FIXTURE specifies a fixture to wrap the body in.
+
+If PROFILE is T profiling information will be collected as well."
+  (let ((suite-form
+          (if suite-p
+              `(get-test ',suite)
+              (or suite '*suite*))))
+    (check-type compile-at (member :run-time :definition-time))
+    (let ((description (if (stringp (car body))
+                           (pop body)
+                           ""))
+          (effective-body (if fixture
+                              (destructuring-bind (name &rest args)
+                                  (ensure-list fixture)
+                                `((with-fixture ,name ,args ,@body)))
+                              body))
+          (lambda-name
+            (format-symbol t "%~A-~A" '#:test name))
+          (inner-lambda-name
+            (format-symbol t "%~A-~A" '#:inner-test name)))
+      `(progn
+         (setf (get-test ',name)
+               (make-instance 'test-case
+                              :name ',name
+                              :runtime-package (find-package ,(package-name *package*))
+                              :test-lambda
+                              (named-lambda ,lambda-name ()
+                                ,@ (ecase compile-at
+                                     (:run-time `((funcall
+                                                   (let ((*package* (find-package ',(package-name *package*))))
+                                                     (compile ',inner-lambda-name
+                                                              '(lambda () ,@effective-body))))))
+                                     (:definition-time effective-body)))
+                              :description ,description
+                              :depends-on ',depends-on
+                              :collect-profiling-info ,profile))
+         (setf (gethash ',name (tests ,suite-form)) ',name)
+         (when *run-test-when-defined*
+           (run! ',name))
+         ',name))))
 
 (defvar *run-test-when-defined* nil
   "When non-NIL tests are run as soon as they are defined.")
