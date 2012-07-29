@@ -74,19 +74,23 @@ If PROFILE is T profiling information will be collected as well."
                                 (destructuring-bind (name &rest args)
                                     (ensure-list fixture)
                                   `((with-fixture ,name ,args ,@body)))
-                                body)))
+                                body))
+            (lambda-name
+              (format-symbol t "%~A-~A" '#:test name))
+            (inner-lambda-name
+              (format-symbol t "%~A-~A" '#:inner-test name)))
         `(progn
            (setf (get-test ',name)
                  (make-instance 'test-case
                                 :name ',name
                                 :runtime-package (find-package ,(package-name *package*))
                                 :test-lambda
-                                (lambda ()
+                                (named-lambda ,lambda-name ()
                                   ,@ (ecase compile-at
                                        (:run-time `((funcall
                                                      (let ((*package* (find-package ',(package-name *package*))))
-                                                       (compile nil '(lambda ()
-                                                                      ,@effective-body))))))
+                                                       (compile ',inner-lambda-name
+                                                                '(lambda () ,@effective-body))))))
                                        (:definition-time effective-body)))
                                 :description ,description
                                 :depends-on ',depends-on
