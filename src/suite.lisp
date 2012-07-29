@@ -37,7 +37,7 @@ named NAME."
 (defun make-suite (name &key description in)
   "Create a new test suite object.
 
-Overides any existing suite named NAME."
+Overrides any existing suite named NAME."
   (let ((suite (make-instance 'test-suite :name name)))
     (when description
       (setf (description suite) description))
