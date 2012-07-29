@@ -54,7 +54,7 @@ If DEPENDS-ON is a symbol it is interpreted as `(AND
 ,depends-on), this is accomadate the common case of one test
 depending on another.
 
-FIXTURE specifies a fixtrue to wrap the body in.
+FIXTURE specifies a fixture to wrap the body in.
 
 If PROFILE is T profiling information will be collected as well."
   (let* ((tmp (gensym))
