@@ -32,7 +32,7 @@
 (defun rem-fixture (key)
   (remhash key *fixture*))
 
-(defmacro def-fixture (name args &body body)
+(defmacro def-fixture (name (&rest args) &body body)
   "Defines a fixture named NAME. A fixture is very much like a
 macro but is used only for simple templating. A fixture created
 with DEF-FIXTURE is a macro which can use the special macrolet
@@ -44,16 +44,17 @@ See Also: WITH-FIXTURE
      (setf (get-fixture ',name) (cons ',args ',body))
      ',name))
 
-(defmacro with-fixture (fixture-name args &body body)
+(defmacro with-fixture (fixture-name (&rest args) &body body)
   "Insert BODY into the fixture named FIXTURE-NAME.
 
 See Also: DEF-FIXTURE"
   (assert (get-fixture fixture-name)
           (fixture-name)
           "Unknown fixture ~S." fixture-name)
-  (destructuring-bind (largs &rest lbody) (get-fixture fixture-name)
+  (destructuring-bind ((&rest largs) &rest lbody)
+      (get-fixture fixture-name)
     `(macrolet ((&body () '(progn ,@body)))
-       (funcall (lambda ,largs ,@lbody) ,@args))))
+       (funcall (lambda (,@largs) ,@lbody) ,@args))))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved.
