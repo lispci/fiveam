@@ -121,7 +121,7 @@ REASON-ARGS is provided, is generated based on the form of TEST:
  (predicate value) - Means that we want to ensure that VALUE
  satisfies PREDICATE.
 
- Wrapping the TEST form in a NOT simply preducse a negated reason
+ Wrapping the TEST form in a NOT simply produces a negated reason
  string."
   (assert (listp test)
           (test)

@@ -79,7 +79,7 @@ See also: DEF-SUITE *SUITE*"
          (progn
            (when ,fail-on-error
              (cerror "Create a new suite named ~A."
-                     "Unkown suite ~A." ',suite-name))
+                     "Unknown suite ~A." ',suite-name))
            (setf (get-test ',suite-name) (make-suite ',suite-name :in ',in)
                  *suite* (get-test ',suite-name))))
        ',suite-name)))

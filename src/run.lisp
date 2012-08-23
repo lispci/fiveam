@@ -221,7 +221,7 @@ run."))
 ;;;; ** Public entry points
 
 (defun run! (&optional (test-spec *suite*))
-  "Equivalent to (explain (run TEST-SPEC))."
+  "Equivalent to (explain! (run TEST-SPEC))."
   (explain! (run test-spec)))
 
 (defun explain! (result-list)
