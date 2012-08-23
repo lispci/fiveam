@@ -144,7 +144,7 @@ Examples:
   (:method ((object t)) nil))
 
 (defmethod reason ((result for-all-test-failed))
-  (format nil "Falsafiable with ~S" (slot-value result 'failure-values)))
+  (format nil "Falsifiable with ~S" (slot-value result 'failure-values)))
 
 (defclass for-all-test-no-tests (test-failure for-all-test-result)
   ())
