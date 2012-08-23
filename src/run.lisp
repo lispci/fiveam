@@ -277,6 +277,35 @@ performed by the !, !! and !!! functions."
   "Rerun the third most recently run test and explain the results."
   (explain! (funcall *!!!*)))
 
+(defun run-all-tests ()
+  "Run all tests in arbitrary order."
+  (run-and-bind-result-list
+   (lambda ()
+     (maphash-values
+      (lambda (test)
+        (when (typep test 'test-case)
+          (%run test)))
+      *test*))))
+
+(defun run-all-tests! ()
+  "Equivalent to (explain! (run-all-tests))."
+  (explain! (run-all-tests)))
+
+(defun run-all-test-suites ()
+  "Run all test suites in arbitrary order."
+  (run-and-bind-result-list
+   (lambda ()
+     (maphash-values
+      (lambda (test)
+        (when (typep test 'test-suite)
+          (format *test-dribble* "~& ~A: " (name test))
+          (%run test)))
+      *test*))))
+
+(defun run-all-test-suites! ()
+  "Equivalent to (explain (run-all-test-suites))."
+  (explain! (run-all-test-suites)))
+
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved.
 ;;
