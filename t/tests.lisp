@@ -254,3 +254,7 @@
   (for-all (((a b) (dummy-mv-generator)))
     (is (= 1 a))
     (is (= 1 b))))
+
+(def-test introspection ()
+  (is (= (length (list-all-suites))
+         (hash-table-count *suites*))))
