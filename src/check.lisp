@@ -160,29 +160,29 @@ REASON-ARGS is provided, is generated based on the form of TEST:
           ((not (?predicate ?expected ?actual))
            (process-entry ?predicate ?expected ?actual t)
            (setf default-reason-args
-                 (list "~S evaluated to ~S, which is ~S to ~S (it should not be)"
+                 (list "~2&~S~2% evaluated to ~2&~S~2% which is ~2&~S~2%to ~2&~S~2% (it should not be)"
                        `',?actual a `',?predicate e)))
           ((not (?satisfies ?value))
            (setf bindings (list (list v ?value))
                  effective-test `(not (,?satisfies ,v))
                  default-reason-args
-                 (list "~S evaluated to ~S, which satisfies ~S (it should not)"
+                 (list "~2&~S~2% evaluated to ~2&~S~2% which satisfies ~2&~S~2% (it should not)"
                        `',?value v `',?satisfies)))
           ((?predicate ?expected ?actual)
            (process-entry ?predicate ?expected ?actual)
            (setf default-reason-args
-                 (list "~S evaluated to ~S, which is not ~S to ~S."
+                 (list "~2&~S~2% evaluated to ~2&~S~2% which is not ~2&~S~2% to ~2&~S~2%."
                        `',?actual a `',?predicate e)))
           ((?satisfies ?value)
            (setf bindings (list (list v ?value))
                  effective-test `(,?satisfies ,v)
                  default-reason-args
-                 (list "~S evaluated to ~S, which does not satisfy ~S"
+                 (list "~2&~S~2% evaluated to ~2&~S~2% which does not satisfy ~2&~S~2%"
                        `',?value v `',?satisfies)))
           (?_
            (setf bindings '()
                  effective-test test
-                 default-reason-args (list "~S was NIL." `',test)))))
+                 default-reason-args (list "~2&~S~2% was NIL." `',test)))))
       `(let ,bindings
          (if ,effective-test
              (add-result 'test-passed :test-expr ',test)
