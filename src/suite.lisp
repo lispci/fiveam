@@ -34,14 +34,14 @@ named NAME."
      (def-suite ,name ,@def-suite-args)
      (in-suite ,name)))
 
-(defun make-suite (name &key description in)
+(defun make-suite (name &key description ((:in parent-suite)))
   "Create a new test suite object.
 
 Overrides any existing suite named NAME."
   (let ((suite (make-instance 'test-suite :name name)))
     (when description
       (setf (description suite) description))
-    (loop for i in (ensure-list in)
+    (loop for i in (ensure-list parent-suite)
           for in-suite = (get-test i)
           do (progn
                (when (null in-suite)
