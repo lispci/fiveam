@@ -202,9 +202,7 @@ run."))
                       (run-tests)
                       (run-tests)))
              (setf suite-results result-list
-                   (status suite) (every (lambda (res)
-                                           (typep res 'test-passed))
-                                         suite-results)))
+                   (status suite) (every #'test-passed-p suite-results)))
         (with-run-state (result-list)
           (setf result-list (nconc result-list suite-results)))))))
 
