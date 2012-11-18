@@ -20,6 +20,8 @@
 (defpackage :it.bese.fiveam
   (:use :common-lisp :alexandria)
   (:nicknames :5am :fiveam)
+  #+sb-package-locks
+  (:lock t)
   (:export
    ;; creating tests and test-suites
    #:make-suite
