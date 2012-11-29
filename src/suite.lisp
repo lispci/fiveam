@@ -42,10 +42,18 @@ def-test) to pass to tests in this suite."
      (def-suite ,name ,@def-suite-args)
      (in-suite ,name)))
 
-(defun make-suite (name &key description ((:in parent-suite)) fixture)
+(defun remove-from-suites (test-name)
+  (when (get-test test-name)
+    ;; if this suite alruady exists, and its :IN some other suite, remove it.
+    (dolist (s (list-all-suites))
+      (when (gethash test-name (tests s))
+        (remhash test-name (tests s))))))
+
+(defun make-suite (name &key description ((:in parent-suite) *suite*) fixture)
   "Create a new test suite object.
 
 Overrides any existing suite named NAME."
+  (remove-from-suites name)
   (let ((suite (make-instance 'test-suite :name name :fixture fixture)))
     (when description
       (setf (description suite) description))
@@ -67,8 +75,7 @@ Overrides any existing suite named NAME."
 
 ;;;; ** Managing the Current Suite
 
-(defvar *suite* (setf (get-test 'NIL)
-                      (make-suite 'NIL :description "Default global suite"))
+(defvar *suite* (setf (get-test 'T) (make-suite 'T :description "Default global suite" :in nil))
   "The current test suite object")
 
 (defmacro in-suite (suite-name)
@@ -80,11 +87,13 @@ See also: DEF-SUITE *SUITE*"
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (%in-suite ,suite-name)))
 
-(defmacro in-suite* (suite-name &key in)
+(defmacro in-suite* (suite-name &key (in nil in-p))
   "Just like in-suite, but silently creates missing suites."
-  `(%in-suite ,suite-name :in ,in :fail-on-error nil))
+  `(%in-suite ,suite-name
+              ,@(when in-p `(:in ,in))
+              :fail-on-error nil))
 
-(defmacro %in-suite (suite-name &key (fail-on-error t) in)
+(defmacro %in-suite (suite-name &key (fail-on-error t) (in nil in-p))
   (with-gensyms (suite)
     `(progn
        (if-let (,suite (get-test ',suite-name))
@@ -93,7 +102,7 @@ See also: DEF-SUITE *SUITE*"
            (when ,fail-on-error
              (cerror "Create a new suite named ~A."
                      "Unknown suite ~A." ',suite-name))
-           (setf (get-test ',suite-name) (make-suite ',suite-name :in ',in)
+           (setf (get-test ',suite-name) (make-suite ',suite-name ,@(when in-p `(:in ',in)))
                  *suite* (get-test ',suite-name))))
        ',suite-name)))
 

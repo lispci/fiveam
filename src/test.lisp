@@ -47,8 +47,11 @@ named KEY in the *TEST* hash table."
       (ensure-list name)
     `(def-test ,name (,@args) ,@body)))
 
-(defmacro def-test (name (&key depends-on (suite nil suite-p) fixture
-                            (compile-at :run-time) profile)
+(defmacro def-test (name (&key depends-on
+                               (suite nil suite-p)
+                               fixture
+                               (compile-at :run-time)
+                               profile)
                     &body body)
   "Create a test named NAME.
 
@@ -88,12 +91,18 @@ is compiled."
     (let* ((description (or docstring ""))
            (body-forms (append decls forms))
            (suite-form (if suite-p
-                           `(get-test ',suite)
+                           (if suite
+                               `(get-test ',suite)
+                               nil)
                            '*suite*))
            (effective-body (let* ((test-fixture fixture)
                                   (suite-fixture (if suite-p
-                                                     (fixture (get-test suite))
-                                                     (fixture *suite*)))
+                                                     (if suite
+                                                         (fixture (get-test suite :error t))
+                                                         nil)
+                                                     (if *suite*
+                                                         (fixture *suite*)
+                                                         nil)))
                                   (effective-fixture (or test-fixture suite-fixture)))
                              (if effective-fixture
                                  (destructuring-bind (name &rest args)
@@ -113,6 +122,7 @@ is compiled."
          ',name))))
 
 (defun register-test (&key name description body suite depends-on compile-at profile)
+  (remove-from-suites name)
   (let ((lambda-name
           (format-symbol t "%~A-~A" '#:test name))
         (inner-lambda-name
@@ -133,7 +143,8 @@ is compiled."
                          :description description
                          :depends-on depends-on
                          :collect-profiling-info profile))
-    (setf (gethash name (tests suite)) name)))
+    (when suite
+      (setf (gethash name (tests (get-test suite :error t))) name))))
 
 (defvar *run-test-when-defined* nil
   "When non-NIL tests are run as soon as they are defined.")

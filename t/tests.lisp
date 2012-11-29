@@ -4,7 +4,9 @@
 
 (in-suite :it.bese.fiveam)
 
-(def-suite test-suite :description "Suite for tests which should fail.")
+(def-suite test-suite
+    :description "Suite for tests which should fail."
+    :in nil)
 
 (defmacro with-test-results ((results test-name) &body body)
   `(let ((,results (with-*test-dribble* nil (run ',test-name))))
@@ -130,15 +132,15 @@
     (is (= 1 (length (remove-if-not #'test-failure-p results))))))
 
 (def-test circular-0 (:depends-on (and circular-1 circular-2 or1) 
-                  :suite test-suite)
+                      :suite test-suite)
   (fail "we depend on a circular dependency, we should not be tested."))
 
 (def-test circular-1 (:depends-on (and circular-2)
-                  :suite test-suite)
+                      :suite test-suite)
   (fail "we have a circular depednency, we should not be tested."))
 
 (def-test circular-2 (:depends-on (and circular-1)
-                  :suite test-suite)
+                      :suite test-suite)
   (fail "we have a circular depednency, we should not be tested."))
 
 (def-test circular ()
@@ -150,19 +152,19 @@
     (run 'circular-2)))
 
 
-(def-suite before-test-suite :description "Suite for before test")
+(def-suite before-test-suite :description "Suite for before test" :in nil)
 
 (def-test before-0 (:suite before-test-suite)
   (pass))
 
 (def-test before-1 (:depends-on (:before before-0)
-                :suite before-test-suite)
+                    :suite before-test-suite)
   (fail))
 
-(def-suite before-test-suite-2 :description "Suite for before test")
+(def-suite before-test-suite-2 :description "Suite for before test" :in nil)
 
 (def-test before-2 (:depends-on (:before before-3)
-                :suite before-test-suite-2)
+                    :suite before-test-suite-2)
   (pass))
 
 (def-test before-3 (:suite before-test-suite-2)
@@ -274,3 +276,19 @@
 
 (def-test test-with-suite-fixture (:suite suite-with-fixture)
   (is (= 42 *special-variable*)))
+
+(def-test add-remove-test-from-suite ()
+  (let ((*test* (make-hash-table :test 'eql))
+        (*suites* (make-hash-table :test 'eql)))
+    (in-suite* empty :in nil)
+    (is (null (get-test 'foo)))
+
+    (def-test foo (:suite nil) t)
+    (is-true (get-test 'foo))
+    (is-false (gethash 'foo (tests *suite*)))
+
+    (def-test foo () t)
+    (is-true (gethash 'foo (tests *suite*)))
+
+    (def-test foo (:suite nil) t)
+    (is-false (gethash 'foo (tests *suite*)))))
