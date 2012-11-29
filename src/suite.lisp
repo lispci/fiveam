@@ -16,7 +16,7 @@
 
 ;;;; ** Creating Suits
 
-(defvar *suites* (make-hash-table))
+(defvar *suites* (make-hash-table :test 'eql))
 
 (defmacro def-suite (name &key description (in nil in-p) (fixture nil fixture-p))
   "Define a new test-suite named NAME.
