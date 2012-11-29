@@ -55,26 +55,6 @@ current list of values."
             (return-from item)))))
     (mapcar #'funcall (mapcar #'cdr collectors))))
 
-;;;; ** Anaphoric conditionals
-
-(defmacro if-bind (var test &body then/else)
-  "Anaphoric IF control structure.
-
-VAR (a symbol) will be bound to the primary value of TEST. If
-TEST returns a true value then THEN will be executed, otherwise
-ELSE will be executed."
-  (assert (first then/else)
-          (then/else)
-          "IF-BIND missing THEN clause.")
-  (destructuring-bind (then &optional else)
-      then/else
-    `(let ((,var ,test))
-       (if ,var ,then ,else))))
-
-(defmacro aif (test then &optional else)
-  "Just like IF-BIND but the var is always IT."
-  `(if-bind it ,test ,then ,else))
-
 ;;;; ** Simple list matching based on code from Paul Graham's On Lisp.
 
 (defmacro acond2 (&rest clauses)
@@ -96,9 +76,9 @@ ELSE will be executed."
 
 (defun binding (x binds)
   (labels ((recbind (x binds)
-             (aif (assoc x binds)
-                  (or (recbind (cdr it) binds)
-                      it))))
+             (if-let (value (assoc x binds))
+               (or (recbind (cdr value) binds)
+                   value))))
     (let ((b (recbind x binds)))
       (values (cdr b) b))))
 

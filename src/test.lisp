@@ -90,12 +90,18 @@ is compiled."
                                    `((with-fixture ,name ,args ,@body-forms)))
                                  body-forms))))
       `(progn
-         (register-test ',name ,description ',effective-body ,suite-form ',depends-on ,compile-at ,profile)
+         (register-test :name ',name
+                        :description ,description
+                        :body ',effective-body
+                        :suite ,suite-form
+                        :depends-on ',depends-on
+                        :compile-at ,compile-at
+                        :profile ,profile)
          (when *run-test-when-defined*
            (run! ',name))
          ',name))))
 
-(defun register-test (name description body suite depends-on compile-at profile)
+(defun register-test (&key name description body suite depends-on compile-at profile)
   (let ((lambda-name
           (format-symbol t "%~A-~A" '#:test name))
         (inner-lambda-name
