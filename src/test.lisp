@@ -79,11 +79,16 @@ is compiled."
            (suite-form (if suite-p
                            `(get-test ',suite)
                            '*suite*))
-           (effective-body (if fixture
-                               (destructuring-bind (name &rest args)
-                                   (ensure-list fixture)
-                                 `((with-fixture ,name ,args ,@body-forms)))
-                               body-forms)))
+           (effective-body (let* ((test-fixture fixture)
+                                  (suite-fixture (if suite-p
+                                                     (fixture (get-test suite))
+                                                     (fixture *suite*)))
+                                  (effective-fixture (or test-fixture suite-fixture)))
+                             (if effective-fixture
+                                 (destructuring-bind (name &rest args)
+                                     (ensure-list effective-fixture)
+                                   `((with-fixture ,name ,args ,@body-forms)))
+                                 body-forms))))
       `(progn
          (register-test ',name ,description ',effective-body ,suite-form ',depends-on ,compile-at ,profile)
          (when *run-test-when-defined*

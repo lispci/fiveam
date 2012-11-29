@@ -258,3 +258,15 @@
   (for-all (((a b) (dummy-mv-generator)))
     (is (= 1 a))
     (is (= 1 b))))
+
+(defvar *special-variable* nil)
+
+(def-fixture fixture-for-suite (value)
+  (progn
+    (setf *special-variable* value)
+    (&body)))
+
+(def-suite suite-with-fixture :fixture (fixture-for-suite 42) :in :it.bese.fiveam)
+
+(def-test test-with-suite-fixture (:suite suite-with-fixture)
+  (is (= 42 *special-variable*)))

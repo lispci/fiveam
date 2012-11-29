@@ -16,17 +16,23 @@
 
 ;;;; ** Creating Suits
 
-(defmacro def-suite (name &key description in)
+(defmacro def-suite (name &key description (in nil in-p) (fixture nil fixture-p))
   "Define a new test-suite named NAME.
 
 IN (a symbol), if provided, causes this suite te be nested in the
 suite named by IN. NB: This macro is built on top of make-suite,
 as such it, like make-suite, will overrwrite any existing suite
-named NAME."
+named NAME.
+
+DESCRIPTION is just a string.
+
+FIXTURE is the fixture argument (exactly like the :fixture argument to
+def-test) to pass to tests in this suite."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (make-suite ',name
                  ,@(when description `(:description ,description))
-                 ,@(when in `(:in ',in)))
+                 ,@(when in-p      `(:in ',in))
+                 ,@(when fixture-p `(:fixture ',fixture)))
      ',name))
 
 (defmacro def-suite* (name &rest def-suite-args)
@@ -34,11 +40,11 @@ named NAME."
      (def-suite ,name ,@def-suite-args)
      (in-suite ,name)))
 
-(defun make-suite (name &key description ((:in parent-suite)))
+(defun make-suite (name &key description ((:in parent-suite)) fixture)
   "Create a new test suite object.
 
 Overrides any existing suite named NAME."
-  (let ((suite (make-instance 'test-suite :name name)))
+  (let ((suite (make-instance 'test-suite :name name :fixture fixture)))
     (when description
       (setf (description suite) description))
     (loop for i in (ensure-list parent-suite)
