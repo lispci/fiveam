@@ -28,6 +28,10 @@
                            information will be collected when the
                            test is run.")))
 
+(defgeneric testable-object-p (object)
+  (:method ((object testable-object)) t)
+  (:method ((object t)) nil))
+
 (defmethod print-object ((test testable-object) stream)
   (print-unreadable-object (test stream :type t :identity t)
     (format stream "~S" (name test))))

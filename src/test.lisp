@@ -16,8 +16,19 @@
   "Lookup table mapping test (and test suite)
   names to objects.")
 
-(defun get-test (key &optional default)
-  (gethash key *test* default))
+(defun get-test (key &key default error)
+  "Finds the test named KEY. If KEY is a testable-object (a test case
+or a test suite) then we just return KEY, otherwise we look for a test
+named KEY in the *TEST* hash table."
+  (if (testable-object-p key)
+      key
+      (multiple-value-bind (value foundp)
+          (gethash key *test*)
+        (if foundp
+            value
+            (if error
+                (error "Unable to find test named ~S." key)
+                default)))))
 
 (defun (setf get-test) (value key)
   (setf (gethash key *test*) value))
