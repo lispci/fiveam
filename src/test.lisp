@@ -30,40 +30,13 @@
         collect test))
 
 (defmacro test (name &body body)
-  "Create a test named NAME. If NAME is a list it must be of the
-form:
-
-  (name &key depends-on suite fixture compile-at profile)
-
-NAME is the symbol which names the test.
-
-DEPENDS-ON is a list of the form:
-
- (AND . test-names) - This test is run only if all of the tests
- in TEST-NAMES have passed, otherwise a single test-skipped
- result is generated.
-
- (OR . test-names) - If any of TEST-NAMES has passed this test is
- run, otherwise a test-skipped result is generated.
-
- (NOT test-name) - This is test is run only if TEST-NAME failed.
-
-AND, OR and NOT can be combined to produce complex dependencies.
-
-If DEPENDS-ON is a symbol it is interpreted as `(AND
-,depends-on), this is accomadate the common case of one test
-depending on another.
-
-FIXTURE specifies a fixture to wrap the body in.
-
-If PROFILE is T profiling information will be collected as well."
-  (simple-style-warning "~A is OBSOLETE! Use ~A instead."
-                        'test 'def-test)
+  "Deprecated. See DEF-TEST."
+  (simple-style-warning "~A is OBSOLETE! Use ~A instead." 'test 'def-test)
   (destructuring-bind (name &rest args)
       (ensure-list name)
     `(def-test ,name (,@args) ,@body)))
 
-(defmacro def-test (name (&key depends-on (suite '*suite* suite-p) fixture
+(defmacro def-test (name (&key depends-on (suite nil suite-p) fixture
                             (compile-at :run-time) profile)
                     &body body)
   "Create a test named NAME.
@@ -72,14 +45,14 @@ NAME is the symbol which names the test.
 
 DEPENDS-ON is a list of the form:
 
- (AND . test-names) - This test is run only if all of the tests
+\(AND . test-names) - This test is run only if all of the tests
  in TEST-NAMES have passed, otherwise a single test-skipped
  result is generated.
 
- (OR . test-names) - If any of TEST-NAMES has passed this test is
+\(OR . test-names) - If any of TEST-NAMES has passed this test is
  run, otherwise a test-skipped result is generated.
 
- (NOT test-name) - This is test is run only if TEST-NAME failed.
+\(NOT test-name) - This is test is run only if TEST-NAME failed.
 
 AND, OR and NOT can be combined to produce complex dependencies.
 
@@ -87,9 +60,17 @@ If DEPENDS-ON is a symbol it is interpreted as `(AND
 ,depends-on), this is accomadate the common case of one test
 depending on another.
 
+SUITE is the suite to put the test under. It defaults to
+*SUITE* (which itself defaults to the default global suite).
+
 FIXTURE specifies a fixture to wrap the body in.
 
-If PROFILE is T profiling information will be collected as well."
+If PROFILE is T profiling information will be collected as well.
+
+COMPILE-AT can be either :RUN-TIME, in which case compilation of the
+test code will be delayed until the test is run, or :DEFINITION-TIME,
+in which case the code will be compiled when the DEF-TEST form itself
+is compiled."
   (check-type compile-at (member :run-time :definition-time))
   (multiple-value-bind (forms decls docstring)
       (parse-body body :documentation t :whole name)
@@ -97,7 +78,7 @@ If PROFILE is T profiling information will be collected as well."
            (body-forms (append decls forms))
            (suite-form (if suite-p
                            `(get-test ',suite)
-                           (or suite '*suite*)))
+                           '*suite*))
            (effective-body (if fixture
                                (destructuring-bind (name &rest args)
                                    (ensure-list fixture)

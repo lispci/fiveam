@@ -36,7 +36,7 @@
    (test-case :accessor test-case :initarg :test-case)
    (test-expr :accessor test-expr :initarg :test-expr))
   (:documentation "All checking macros will generate an object of
- type TEST-RESULT."))
+type TEST-RESULT."))
 
 (defclass test-passed (test-result)
   ()
@@ -91,8 +91,8 @@ when appropiate."))
 
 (defun add-result (result-type &rest make-instance-args)
   "Create a TEST-RESULT object of type RESULT-TYPE passing it the
-  initialize args MAKE-INSTANCE-ARGS and adds the resulting
-  object to the list of test results."
+initialize args MAKE-INSTANCE-ARGS and adds the resulting object to
+the list of test results."
   (with-run-state (result-list current-test)
     (let ((result (apply #'make-instance result-type
                          (append make-instance-args (list :test-case current-test)))))
@@ -114,15 +114,14 @@ If TEST returns a true value a test-passed result is generated,
 otherwise a test-failure result is generated. The reason, unless
 REASON-ARGS is provided, is generated based on the form of TEST:
 
- (predicate expected actual) - Means that we want to check
- whether, according to PREDICATE, the ACTUAL value is
- in fact what we EXPECTED.
+\(predicate expected actual) - Means that we want to check whether,
+according to PREDICATE, the ACTUAL value is in fact what we EXPECTED.
 
- (predicate value) - Means that we want to ensure that VALUE
- satisfies PREDICATE.
+\(predicate value) - Means that we want to ensure that VALUE satisfies
+PREDICATE.
 
- Wrapping the TEST form in a NOT simply produces a negated reason
- string."
+Wrapping the TEST form in a NOT simply produces a negated reason
+string."
   (assert (listp test)
           (test)
           "Argument to IS must be a list, not ~S" test)

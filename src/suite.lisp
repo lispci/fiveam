@@ -55,7 +55,7 @@ Overrides any existing suite named NAME."
 ;;;; ** Managing the Current Suite
 
 (defvar *suite* (setf (get-test 'NIL)
-                      (make-suite 'NIL :description "Global Suite"))
+                      (make-suite 'NIL :description "Default global suite"))
   "The current test suite object")
 
 (defmacro in-suite (suite-name)
