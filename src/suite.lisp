@@ -16,6 +16,8 @@
 
 ;;;; ** Creating Suits
 
+(defvar *suites* (make-hash-table))
+
 (defmacro def-suite (name &key description (in nil in-p) (fixture nil fixture-p))
   "Define a new test-suite named NAME.
 
@@ -29,10 +31,11 @@ DESCRIPTION is just a string.
 FIXTURE is the fixture argument (exactly like the :fixture argument to
 def-test) to pass to tests in this suite."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (make-suite ',name
-                 ,@(when description `(:description ,description))
-                 ,@(when in-p      `(:in ',in))
-                 ,@(when fixture-p `(:fixture ',fixture)))
+     (setf (gethash ',name *suites*)
+           (make-suite ',name
+                       ,@(when description `(:description ,description))
+                       ,@(when in-p      `(:in ',in))
+                       ,@(when fixture-p `(:fixture ',fixture))))
      ',name))
 
 (defmacro def-suite* (name &rest def-suite-args)
@@ -57,6 +60,10 @@ Overrides any existing suite named NAME."
                (setf (gethash name (tests in-suite)) suite)))
     (setf (get-test name) suite)
     suite))
+
+(defun list-all-suites ()
+  (loop for suite being the hash-value in *suites*
+       collect suite))
 
 ;;;; ** Managing the Current Suite
 

@@ -259,6 +259,10 @@
     (is (= 1 a))
     (is (= 1 b))))
 
+(def-test introspection ()
+  (is (= (length (list-all-suites))
+         (hash-table-count *suites*))))
+
 (defvar *special-variable* nil)
 
 (def-fixture fixture-for-suite (value)
