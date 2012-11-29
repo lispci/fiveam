@@ -31,11 +31,10 @@ DESCRIPTION is just a string.
 FIXTURE is the fixture argument (exactly like the :fixture argument to
 def-test) to pass to tests in this suite."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (setf (gethash ',name *suites*)
-           (make-suite ',name
-                       ,@(when description `(:description ,description))
-                       ,@(when in-p      `(:in ',in))
-                       ,@(when fixture-p `(:fixture ',fixture))))
+     (make-suite ',name
+                 ,@(when description `(:description ,description))
+                 ,@(when in-p      `(:in ',in))
+                 ,@(when fixture-p `(:fixture ',fixture)))
      ',name))
 
 (defmacro def-suite* (name &rest def-suite-args)
@@ -50,6 +49,7 @@ Overrides any existing suite named NAME."
   (let ((suite (make-instance 'test-suite :name name :fixture fixture)))
     (when description
       (setf (description suite) description))
+    (setf (gethash name *suites*) suite)
     (loop for i in (ensure-list parent-suite)
           for in-suite = (get-test i)
           do (progn
