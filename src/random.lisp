@@ -167,29 +167,57 @@ than or equal to MIN and less than or equal to MIN."
   (lambda ()
     (+ min (random (1+ (- max min))))))
 
-(defun gen-float (&key bound (type 'short-float))
-  "Returns a generator which producs floats of type TYPE. BOUND,
-if specified, constrains the ruselts to be in the range (-BOUND,
-BOUND)."
+(defun type-most-negative (floating-point-type)
+  (ecase floating-point-type
+    (short-float most-negative-short-float)
+    (single-float most-negative-single-float)
+    (double-float most-negative-double-float)
+    (long-float most-negative-long-float)))
+
+(defun type-most-positive (floating-point-type)
+  (ecase floating-point-type
+    (short-float most-positive-short-float)
+    (single-float most-positive-single-float)
+    (double-float most-positive-double-float)
+    (long-float most-positive-long-float)) )
+
+(defun gen-float (&key bound (type 'short-float) min max)
+  "Returns a generator which producs floats of type TYPE. 
+
+BOUND, which defaults to the most-positive value of TYPE, constrains
+the results to be in the range (-BOUND, BOUND).
+
+MIN and MAX, if supplied, cause the returned float to be within the
+floating point interval (MIN, MAX). It is the caller's responsibility
+to ensure that the range between MIN and MAX is less than the
+requested type's maximum interval. MIN defaults to 0.0 (when only MAX
+is supplied), MAX defaults to MOST-POSITIVE-<TYPE> (when only MIN is
+supplied). This peculiar calling convention is designed for the common
+case of generating positive values below a known limit.
+
+NOTE: Since GEN-FLOAT is built on CL:RANDOM the distribution of
+returned values will be continuous, not discrete. In other words: the
+values will be evenly distributed across the specified numeric range,
+the distribution of possible floating point values, when seen as a
+sequence of bits, will not be even."
   (lambda ()
-    (let* ((most-negative (ecase type
-                            (short-float most-negative-short-float)
-                            (single-float most-negative-single-float)
-                            (double-float most-negative-double-float)
-                            (long-float most-negative-long-float)))
-           (most-positive (ecase type
-                            (short-float most-positive-short-float)
-                            (single-float most-positive-single-float)
-                            (double-float most-positive-double-float)
-                            (long-float most-positive-long-float)))
-           (bound (or bound (max most-positive (- most-negative)))))
-      (coerce
-       (ecase (random 2)
-         (0 ;; generate a positive number
-          (random (min most-positive bound)))
-         (1 ;; generate a negative number
-          (- (random (min (- most-negative) bound)))))
-       type))))
+    (flet ((rand (limit) (random (coerce limit type))))
+      (when (and bound (or min max))
+        (error "GET-FLOAT does not support specifying :BOUND and :MAX/:MIN."))
+      (if (or min max)
+          (handler-bind ((arithmetic-error (lambda (c)
+                                             (error "ERROR ~S occured when attempting to generate a random value between ~S and ~S." c min max))))
+            (setf min (or min 0)
+                  max (or max (type-most-positive type)))
+            (+ min (rand (- max min))))
+          (let ((min (if bound bound (- (type-most-negative type))))
+                (max (if bound bound (type-most-positive type))))
+            (ecase (random 2)
+              (0 ;; generate a positive number
+               (rand max))
+              (1 ;; generate a negative number NB: min is actually
+               ;; positive. see the if statement above.
+               (- (rand min)))))))))
 
 (defun gen-character (&key (code-limit char-code-limit)
                            (code (gen-integer :min 0 :max (1- code-limit)))

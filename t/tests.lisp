@@ -227,7 +227,11 @@
     (test-gen-float single-float)
     (test-gen-float short-float)
     (test-gen-float double-float)
-    (test-gen-float long-float)))
+    (test-gen-float long-float)
+
+    (for-all ((value (gen-float :type 'single-float :min 1 :max 2)))
+      (is (typep value 'single-float))
+      (is (<= (coerce 1 'single-float) value (coerce 2 'single-float))))))
 
 (def-test gen-character ()
   (for-all ((c (gen-character)))
