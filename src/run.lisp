@@ -221,12 +221,12 @@ run."))
 ;;;; ** Public entry points
 
 (defun run! (&optional (test-spec *suite*))
-  "Equivalent to (explain! (run TEST-SPEC))."
+  "Shortcut for (explain! (run TEST-SPEC))."
   (explain! (run test-spec)))
 
 (defun explain! (result-list)
   "Explain the results of RESULT-LIST using a
-detailed-text-explainer with output going to *test-dribble*"
+detailed-text-explainer with output going to `*test-dribble*`"
   (explain (make-instance 'detailed-text-explainer) result-list *test-dribble*))
 
 (defun debug! (&optional (test-spec *suite*))

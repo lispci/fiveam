@@ -190,15 +190,15 @@ string."
 
 ;;;; *** Other checks
 
-(defmacro skip (&rest reason)
-  "Generates a TEST-SKIPPED result."
-  `(progn
-     (format *test-dribble* "s")
-     (add-result 'test-skipped :reason (format nil ,@reason))))
-
 (defmacro is-every (predicate &body clauses)
-  "The input is either a list of lists, or a list of pairs. Generates (is (,predicate ,expr ,value))
-   for each pair of elements or (is (,predicate ,expr ,value) ,@reason) for each list."
+  "Tests that all the elements of CLAUSES are equal, according to PREDICATE.
+
+If every element of CLAUSES is a cons we assume the `first` of each
+element is the expected value, and the `second` of each element is the
+actual value and generate a call to `IS` accordingly.
+
+If not every element of CLAUSES is a cons then we assume that each
+element is a value to pass to predicate (the 1 argument form of `IS`)"
   `(progn
      ,@(if (every #'consp clauses)
            (loop for (expected actual . reason) in clauses
@@ -239,9 +239,9 @@ string."
 
 (defmacro signals (condition-spec
                    &body body)
-  "Generates a pass if BODY signals a condition of type
-CONDITION. BODY is evaluated in a block named NIL, CONDITION is
-not evaluated."
+  "Generates a pass if `BODY` signals a condition of type
+`CONDITION`. `BODY` is evaluated in a block named `NIL`, `CONDITION`
+is not evaluated."
   (let ((block-name (gensym)))
     (destructuring-bind (condition &optional reason-control reason-args)
         (ensure-list condition-spec)
@@ -262,9 +262,10 @@ not evaluated."
          (return-from ,block-name nil)))))
 
 (defmacro finishes (&body body)
-  "Generates a pass if BODY executes to normal completion. In
-other words if body does signal, return-from or throw this test
-fails."
+  "Generates a pass if BODY executes to normal completion. 
+
+In other words if body signals a condition (which is then handled),
+return-froms or throws this test fails."
   `(let ((ok nil))
      (unwind-protect
           (progn
@@ -277,18 +278,24 @@ fails."
             :test-expr ',body)))))
 
 (defmacro pass (&rest message-args)
-  "Simply generate a PASS."
+  "Generate a PASS."
   `(add-result 'test-passed
                :test-expr ',message-args
                ,@(when message-args
                        `(:reason (format nil ,@message-args)))))
 
 (defmacro fail (&rest message-args)
-  "Simply generate a FAIL."
+  "Generate a FAIL."
   `(process-failure
     :test-expr ',message-args
     ,@(when message-args
             `(:reason (format nil ,@message-args)))))
+
+(defmacro skip (&rest message-args)
+  "Generates a SKIP result."
+  `(progn
+     (format *test-dribble* "s")
+     (add-result 'test-skipped :reason (format nil ,@message-args))))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved.

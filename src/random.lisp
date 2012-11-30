@@ -32,40 +32,59 @@
   FOR-ALL test including when the body is skipped due to failed
   guard conditions.
 
-Since we have guard conditions we may get into infinite loops
-where the test code is never run due to the guards never
-returning true. This second run limit prevents that.")
+Since we have guard conditions we may get into infinite loops where
+the test code is never run due to the guards never returning
+true. This second limit prevents that from happening.")
 
 (defmacro for-all (bindings &body body)
-  "Bind BINDINGS to random variables and test BODY *num-trials* times.
+  "Bind BINDINGS to random variables and execute BODY `*num-trials*` times.
 
-BINDINGS is a list of binding forms, each element is a list
-of (BINDING VALUE &optional GUARD). Value, which is evaluated
-once when the for-all is evaluated, must return a generator which
-be called each time BODY is evaluated. BINDING is either a symbol
-or a list which will be passed to destructuring-bind. GUARD is a
-form which, if present, stops BODY from executing when IT returns
-NIL. The GUARDS are evaluated after all the random data has been
-generated and they can refer to the current value of any
-binding. NB: Generator forms, unlike guard forms, can not contain
-references to the boud variables.
+BINDINGS::
+
+A a list of binding forms, each element is a list of:
++
+    (BINDING VALUE &optional GUARD)
++
+VALUE, which is evaluated once when the for-all is evaluated, must
+return a generator which be called each time BODY is
+evaluated. BINDING is either a symbol or a list which will be passed
+to destructuring-bind. GUARD is a form which, if present, stops BODY
+from executing when it returns NIL. The GUARDS are evaluated after all
+the random data has been generated and they can refer to the current
+value of any binding. 
++
+[NOTE]
+Generator forms, unlike guard forms, can not contain references to the
+bound variables.
+
+BODY::
+
+The code to run. Will be run `*NUM-TRIALS*` times (unless the `*MAX-TRIALS*` limit is reached).
 
 Examples:
 
-  (for-all ((a (gen-integer)))
-    (is (integerp a)))
+--------------------------------
+\(for-all ((a (gen-integer)))
+  (is (integerp a)))
 
-  (for-all ((a (gen-integer) (plusp a)))
-    (is (integerp a))
-    (is (plusp a)))
+\(for-all ((a (gen-integer) (plusp a)))
+  (is (integerp a))
+  (is (plusp a)))
 
-  (for-all ((less (gen-integer))
-            (more (gen-integer) (< less more)))
-    (is (<= less more)))
+\(for-all ((less (gen-integer))
+          (more (gen-integer) (< less more)))
+  (is (<= less more)))
 
-  (for-all (((a b) (gen-two-integers)))
-    (is (integerp a))
-    (is (integerp b)))"
+\(defun gen-two-integers ()
+  (lambda ()
+    (list (funcall (gen-integer))
+          (funcall (gen-integer)))))
+
+\(for-all (((a b) (gen-two-integers)))
+  (is (integerp a))
+  (is (integerp b)))
+--------------------------------
+"
   (with-gensyms (test-lambda-args)
     `(perform-random-testing
       (list ,@(mapcar #'second bindings))
@@ -184,21 +203,31 @@ than or equal to MIN and less than or equal to MIN."
 (defun gen-float (&key bound (type 'short-float) min max)
   "Returns a generator which producs floats of type TYPE. 
 
-BOUND, which defaults to the most-positive value of TYPE, constrains
-the results to be in the range (-BOUND, BOUND).
+BOUND::
 
-MIN and MAX, if supplied, cause the returned float to be within the
-floating point interval (MIN, MAX). It is the caller's responsibility
-to ensure that the range between MIN and MAX is less than the
-requested type's maximum interval. MIN defaults to 0.0 (when only MAX
-is supplied), MAX defaults to MOST-POSITIVE-<TYPE> (when only MIN is
-supplied). This peculiar calling convention is designed for the common
-case of generating positive values below a known limit.
+Constrains the results to be in the range (-BOUND, BOUND). Default
+value is the most-positive value of TYPE.
 
-NOTE: Since GEN-FLOAT is built on CL:RANDOM the distribution of
-returned values will be continuous, not discrete. In other words: the
-values will be evenly distributed across the specified numeric range,
-the distribution of possible floating point values, when seen as a
+MIN and MAX::
+
+If supplied, cause the returned float to be within the floating point
+interval (MIN, MAX). It is the caller's responsibility to ensure that
+the range between MIN and MAX is less than the requested type's
+maximum interval. MIN defaults to 0.0 (when only MAX is supplied), MAX
+defaults to MOST-POSITIVE-<TYPE> (when only MIN is supplied). This
+peculiar calling convention is designed for the common case of
+generating positive values below a known limit.
+
+TYPE::
+
+The type of the returned float. Defaults to `SHORT-FLOAT`. Effects the
+default values of BOUND, MIN and MAX.
+
+[NOTE]
+Since GEN-FLOAT is built on CL:RANDOM the distribution of returned
+values will be continuous, not discrete. In other words: the values
+will be evenly distributed across the specified numeric range, the
+distribution of possible floating point values, when seen as a
 sequence of bits, will not be even."
   (lambda ()
     (flet ((rand (limit) (random (coerce limit type))))
@@ -224,9 +253,19 @@ sequence of bits, will not be even."
                            (alphanumericp nil))
   "Returns a generator of characters.
 
-CODE must be a generator of random integers. ALPHANUMERICP, if
-non-NIL, limits the returned chars to those which pass
-alphanumericp."
+CODE::
+
+A generater for random integers.
+
+CODE-LIMIT::
+
+If set only characters whose code-char is below this value will be
+returned.
+
+ALPHANUMERICP::
+
+Limits the returned chars to those which pass alphanumericp.
+"
   (lambda ()
     (loop
        for count upfrom 0
@@ -240,24 +279,56 @@ alphanumericp."
        finally (return char))))
 
 (defun gen-string (&key (length (gen-integer :min 0 :max 80))
-                        (elements (gen-character))
-                        (element-type 'character))
-  "Returns a generator which producs random strings. LENGTH must
-be a generator which producs integers, ELEMENTS must be a
-generator which produces characters of type ELEMENT-TYPE."
+                        (elements (gen-character)))
+  "Returns a generator which producs random strings of characters.
+
+LENGTH::
+
+A random integer generator specifying how long to make the generated string.
+
+ELEMENTS::
+
+A random character generator which producs the characters in the
+string.
+"
+  (gen-buffer :length length
+              :element-type 'character
+              :elements elements))
+
+(defun gen-buffer (&key (length (gen-integer :min 0 :max 50))
+                     (element-type '(unsigned-byte 8))
+                     (elements (gen-integer :min 0 :max (1- (expt 2 8)))))
+  "Generates a random vector, defaults to a random (unsigned-byte 8)
+vector with elements between 0 and 255.
+
+LENGTH::
+
+The length of the buffer to create (a random integer generator)
+
+ELEMENT-TYPE::
+
+The type of array to create.
+
+ELEMENTS:: 
+
+The random element generator.
+"
   (lambda ()
-    (loop
-       with length = (funcall length)
-       with string = (make-string length :element-type element-type)
-       for index below length
-       do (setf (aref string index) (funcall elements))
-       finally (return string))))
+    (let ((buffer (make-array (funcall length) :element-type element-type)))
+      (map-into buffer elements))))
 
 (defun gen-list (&key (length (gen-integer :min 0 :max 10))
                       (elements (gen-integer :min -10 :max 10)))
-  "Returns a generator which producs random lists. LENGTH must be
-an integer generator and ELEMENTS must be a generator which
-producs objects."
+  "Returns a generator which producs random lists.
+
+LENGTH::
+
+As with GEN-STRING, a random integer generator specifying the length of the list to create.
+
+ELEMENTS::
+
+A random object generator.
+"
   (lambda ()
     (loop
        repeat (funcall length)
@@ -278,14 +349,12 @@ will produce the elements."
     (lambda ()
       (rec))))
 
-(defun gen-buffer (&key (length (gen-integer :min 0 :max 50))
-                        (element-type '(unsigned-byte 8))
-                        (elements (gen-integer :min 0 :max (1- (expt 2 8)))))
-  (lambda ()
-    (let ((buffer (make-array (funcall length) :element-type element-type)))
-      (map-into buffer elements))))
-
 (defun gen-one-element (&rest elements)
+  "Produces one randomly selected element of ELEMENTS.
+
+ELEMENTS::
+
+A list of objects (note: objects, not generators) to choose from."
   (lambda ()
     (nth (random (length elements)) elements)))
 

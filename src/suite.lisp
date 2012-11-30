@@ -21,14 +21,23 @@
 (defmacro def-suite (name &key description (in nil in-p) (fixture nil fixture-p))
   "Define a new test-suite named NAME.
 
+NAME::
+  The symbol naming the test.
+
+DESCRIPTION::
+  A string describing the contents/purpose of this suite. 
+
 IN (a symbol), if provided, causes this suite te be nested in the
-suite named by IN. NB: This macro is built on top of make-suite,
-as such it, like make-suite, will overrwrite any existing suite
-named NAME.
+suite named by `IN`. If `IN` is `NIL`, as opposed to not being passed
+at all, the new suite will not be a part of any existing suite.
+
+[NOTE]
+This macro is built on top of `make-suite` as such it, like `make-suite`,
+will overrwrite any existing suite named `NAME`.
 
 DESCRIPTION is just a string.
 
-FIXTURE is the fixture argument (exactly like the :fixture argument to
+FIXTURE is the fixture argument (exactly like the `:fixture` argument to
 def-test) to pass to tests in this suite."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (make-suite ',name
@@ -79,32 +88,36 @@ Overrides any existing suite named NAME."
   "The current test suite object")
 
 (defmacro in-suite (suite-name)
-  "Set the *suite* special variable so that all tests defined
+  "Set the `*suite*` special variable so that all tests defined
 after the execution of this form are, unless specified otherwise,
-in the test-suite named SUITE-NAME.
+in the test-suite named `SUITE-NAME`.
 
-See also: DEF-SUITE *SUITE*"
+See also: `DEF-SUITE` and `*SUITE*`. "
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (%in-suite ,suite-name)))
 
-(defmacro in-suite* (suite-name &key (in nil in-p))
-  "Just like in-suite, but silently creates missing suites."
+(defmacro in-suite* (suite-name &rest def-suite-args)
+  "Same effect as `IN-SUITE`, but if `SUITE-NAME` does not exist it
+will be created (as per DEF-SUITE)"
   `(%in-suite ,suite-name
-              ,@(when in-p `(:in ,in))
-              :fail-on-error nil))
+              :fail-on-error nil
+              ,@def-suite-args))
 
-(defmacro %in-suite (suite-name &key (fail-on-error t) (in nil in-p))
+(defmacro %in-suite (suite-name &rest def-suite-args &key fail-on-error &allow-other-keys)
+  (declare (ignore fail-on-error))
   (with-gensyms (suite)
-    `(progn
-       (if-let (,suite (get-test ',suite-name))
-         (setf *suite* ,suite)
-         (progn
-           (when ,fail-on-error
-             (cerror "Create a new suite named ~A."
-                     "Unknown suite ~A." ',suite-name))
-           (setf (get-test ',suite-name) (make-suite ',suite-name ,@(when in-p `(:in ',in)))
-                 *suite* (get-test ',suite-name))))
-       ',suite-name)))
+    (let ((fail-on-error (getf def-suite-args :fail-on-error t)))
+      (remf def-suite-args :fail-on-error)
+      `(progn
+         (if-let (,suite (get-test ',suite-name))
+           (setf *suite* ,suite)
+           (progn
+             (when ,fail-on-error
+               (cerror "Create a new suite named ~A."
+                       "Unknown suite ~A." ',suite-name))
+             (setf (get-test ',suite-name) (make-suite ',suite-name ,@def-suite-args)
+                   *suite* (get-test ',suite-name))))
+         ',suite-name))))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved.

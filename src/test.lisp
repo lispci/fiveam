@@ -13,8 +13,7 @@
 
 (defvar *test*
   (make-hash-table :test 'eql)
-  "Lookup table mapping test (and test suite)
-  names to objects.")
+  "Lookup table mapping test (and test suite) names to objects.")
 
 (defun get-test (key &key default error)
   "Finds the test named KEY. If KEY is a testable-object (a test case
@@ -47,44 +46,53 @@ named KEY in the *TEST* hash table."
       (ensure-list name)
     `(def-test ,name (,@args) ,@body)))
 
-(defmacro def-test (name (&key depends-on
-                               (suite nil suite-p)
+(defmacro def-test (name (&key (suite nil suite-p)
                                fixture
                                (compile-at :run-time)
+                               depends-on
                                profile)
                     &body body)
   "Create a test named NAME.
 
-NAME is the symbol which names the test.
+NAME (a symbol)::
+  The name of the test.
 
-DEPENDS-ON is a list of the form:
+SUITE (a test name)::
+  The suite to put the test under. It defaults to *SUITE* (which
+  itself defaults to the default global suite).
 
-\(AND . test-names) - This test is run only if all of the tests
- in TEST-NAMES have passed, otherwise a single test-skipped
- result is generated.
+FIXTURE::
+  The name of the fixture to use for this test. See `WITH-FIXTURE` for
+  details on fixtures.
 
-\(OR . test-names) - If any of TEST-NAMES has passed this test is
- run, otherwise a test-skipped result is generated.
+COMPILE-AT (a keyword)::
+  When the body of this test should be compiled. By default, or when
+  `:compile-at` is `:run-time`, test bodies are only compiled before
+  they are run. Set this to to `:definition-time` to force
+  compilation, and errors/warnings, to be done at compile time.
 
-\(NOT test-name) - This is test is run only if TEST-NAME failed.
+DEPENDS-ON::
+  A list, or a symbol, which specifies the relationship between this
+  test and other tests. These conditions, `AND`, `OR` and `NOT` can be
+  combined to produce complex dependencies (whethere this is something
+  you should actually be doing is a question for another day).
 
-AND, OR and NOT can be combined to produce complex dependencies.
+  `(and &rest TEST-NAMES)`:::
+    This test is run only if all of the tests in TEST-NAMES have
+    passed, otherwise a single test-skipped result is generated.
 
-If DEPENDS-ON is a symbol it is interpreted as `(AND
-,depends-on), this is accomadate the common case of one test
-depending on another.
+  `(or &rest TEST-NAMES)`:::
+    If any of TEST-NAMES has passed this test is run, otherwise a
+    test-skipped result is generated.
 
-SUITE is the suite to put the test under. It defaults to
-*SUITE* (which itself defaults to the default global suite).
+  `(NOT TEST-NAME`:::
+    This is test is run only if TEST-NAME failed.
 
-FIXTURE specifies a fixture to wrap the body in.
+  __a-symbol__:::
+    Shorthand for `(AND a-symbol)`
 
-If PROFILE is T profiling information will be collected as well.
-
-COMPILE-AT can be either :RUN-TIME, in which case compilation of the
-test code will be delayed until the test is run, or :DEFINITION-TIME,
-in which case the code will be compiled when the DEF-TEST form itself
-is compiled."
+PROFILE::
+  When non-`NIL` profiling information will be collected as well."
   (check-type compile-at (member :run-time :definition-time))
   (multiple-value-bind (forms decls docstring)
       (parse-body body :documentation t :whole name)
