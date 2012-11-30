@@ -1,0 +1,652 @@
+= FiveAM Manual =
+Marco Baringer <mb@bese.it>
+Fall/Winter 2012
+:Author Initials: MB
+:toc:
+:icons:
+:numbered:
+:website: http://common-lisp.net/project/fiveam
+:stylesheet: fiveam.css
+:linkcss:
+
+== Introduction ==
+
+=== The Super Brief Introduction ===
+
+FiveAM is a testing framework. See the xref:API_REFERENCE[api] for
+details.
+
+=== An Ever So Slightly Longer Introduction ===
+
+You use define some xref:TESTS[tests] (using
+xref:OP_DEF-TEST[`def-test`]), each of which consists of some
+xref:CHECKS[checks] (with xref:OP_IS[`is`] and friends) which can pass
+or fail; you xref:RUNNING_TESTS[run] some tests (using
+xref:OP_RUN-EPOINT-[run!] and friends) and you look at the results
+(probably using xref:OP_RUN-EPOINT-[run!] again). Rinse, lather,
+repeat.
+
+=== The Real Introduction ===
+
+FiveAM is a testing framework, this is a rather vague concept, so
+before talking about how to use FiveAM it's worth knowing what task(s)
+FiveAM was built to do and, in particular, which styles of testing
+FiveAM was designed to facilitate:
+
+`test driven development`:: sometimes you know what you're trying to
+  do (lucky you) and you can figure out what your code should do
+  before you've written the code itself. The idea here is that you
+  write a bunch of tests and when all these test pass your code is
+  done.
+
+`interactive testing`:: sometimes as you're writing code you'll see
+  certain constraints that your code has to meet. For example you'll
+  realize there's a specific border case your code, which you're
+  probably not even done writing, has to deal with. In this work flow
+  you'll write code and tests more or less simultaneously and by the
+  time you're satisfied that your code does what it should you'll have
+  a set of tests which prove that it does what you think it does.
+
+`regression testing`:: sometimes you're pretty confident, just by
+  looking at the code, that your program does what it should, but you
+  want an automatic way to make sure that it continues to do what it
+  does even if (when) you change other parts of the code.
+
+[NOTE]
+There's also `beaviour driven development`. this works under
+the assumption that you can write tests in a natural-ish lanugage and
+they'll be easier to maintain than tests writen in code (have we
+learned nothing from cobol?). FiveAM does not, in its current
+implementation, support link:http://cukes.info/[cucumber] like
+behaviour driven development. patches welcome (they'll get laughed at
+at first, but they'll get applied, and then they'll get used, and then
+they'll be an essential part of fiveam itself...)
+
+=== Words ===
+
+Since there are far many more testing frameworks than there are words
+for talking about testing frameworks, the same words end up meaning
+different things in different frameworks. Just to be clear, here are
+the words fiveam uses:
+
+`check`:: a single expression which has an expected value.
+
+`test`:: a set of checks which we want to always run together.
+
+`suite`:: a group of tests we often want to run all at once.
+
+[[TESTS]]
+== Tests ==
+
+Tests are created with the xref:OP_DEF-TEST[`def-test`] macro and
+consist of:
+
+A name::
+
+Because everything deserves a name. Names in FiveAM are symbols (or
+anything that can be sensibly put in an `eql` hash table) and they are
+used both to select which test to run (as arguments to `run!` and
+family) and when reporting test failures.
+
+A body::
+
+Every test has a function which is the actual code that gets executed
+when the test is run. This code, whatever it is, will, bugs aside,
+xref:CHECKS[create a set of test result objects] (failures, successes
+and skips) and store these in a few dynamic variables (you don't need
+to worry about those).
++ 
+The body is actually the only real part of the test, everything else
+is administrativia. Sometimes usefel administrativia, but none the
+less overhead.
+
+A suite::
+
+Generally speaking you'll have so many tests that you'll not want to
+run them all every single time you need to run one of them (automated
+regression testing is another use case). Tests can be grouped into
+suites, and suites can also be grouped into suites, and suites have
+names, so by specfying the name of a suite we only run those tests
+that are a part of that suite.
++
+Unless otherwise specified tests add themselves to the xref:THE_CURRENT_SUITE[current suite].
+
+There are two other properties, also set via parameters to
+xref:OP_DEF-TEST[`def-test`], which influence how the tests are
+run:
+
+When to compile the test::
+
+Often enough, when working with lisp macros especially, it's useful to
+delay compilation of the test's body until the test is run. A useful
+side effect of this delay is that the code will be recompiled every
+time its run, so if the macro definition has changed that will be
+picked up at the next run of the test. While this is the default mode
+of operation for FiveAM it can be turned off and tests will be
+compiled at the 'normal' time (when the enclosing def-test form is
+compiled).
+
+Whether to run the test at all::
+
+Sometimes, but far less often than the designer of FiveAM expected,
+it's useful to run a test only when some other test passes. The
+assumption being that if the lower level tests have failed there's no
+point in cluttering up the output by running the higher level tests as
+well.
++
+YMMV. (i got really bad mileage out of this feature)
+
+[[CHECKS]]
+== Checks ==
+
+At the heart of every test is something which compares the result of
+some code to some expected value, in FiveAM these are called
+checks. All checks in FiveAM do something, exactly what depends on the
+check, and then either:
+
+. generate a "this check passed" result
+
+. generate a "this check failed" result and a corresponding failure
+  description message.
+
+. generate a "for some reason this check was skipped" result.
+
+All checks take, as an optional argument, so called "reason format
+control arguments." Should the check fail (or be skipped) these
+arguments will be passed to format, via something like `(curry
+#'format nil)`, and the result will be used as the
+explanation/description of the failure.
+
+When it comes to the actual check functions themeselves, there are
+three basic kinds:
+
+. xref:CHECKING_RETURN_VALUES[those that take a value and compare it
+to another value]
+
+. xref:CHECKING_CONTROL_FLOW[those that make sure the program's
+execution takes, or does not take, a certain path]
+
+. xref:ARBITRARY_CHECK_RESULTS[those that just force a success or
+failure to be recorded].
+
+[[CHECKING_RETURN_VALUES]]
+=== Checking return values ===
+
+xref:OP_IS[`IS`], xref:OP_IS-TRUE[`IS-TRUE`],
+xref:OP_IS[`IS-FALSE`] will take one form and compare its return
+value to some known value (the so called expected vaule) and report an
+error if these two are not equal.
+
+--------------------------------
+;; Pass if (+ 2 2) is = to 5
+(is (= 5 (+ 2 2)))
+;; Pass if (zerop 0) is not-NIL
+(is-true (zerop 0))
+;; Pass if (zerop 1) is NIL
+(is-false (zerop 1))
+--------------------------------
+
+Often enough we want to test a set of expected values against a set of
+test values using the same operator. If, for example, we were
+implementing a string formatting functions, then `IS-EVERY` provides a
+concise way to line up N different inputs along with their expected
+outputs. For example, let's say we were testing `cl:+`, we could setup
+a list of tests like this:
+
+--------------------------------
+(is-every #'= (5 (+ 2 2))
+              (0 (+ -1 1))
+              (-1 (+ -1 0))
+              (1 (+ 0 1))
+              (1 (+ 1 0)))
+--------------------------------
+
+We'd do this instead of writing out 5 seperate `IS` or `IS-TRUE`
+checks.
+
+[[CHECKING_CONTROL_FLOW]]
+=== Checking control flow ===
+
+xref:OP_SIGNALS[`SIGNALS`] and xref:OP_FINISHES[`FINISHES`] create
+pass/fail results depending on whether their body code did or did not
+terminat normally.
+
+Both of these checks assume that there is a single block of code and
+it either runs to completion or it doesn't. Sometimes though the logic
+is more complex and you can't easily represent it as a single progn
+with a flag at the end. See xref:ARBITRARY_CHECK_RESULTS[below].
+
+[[ARBITRARY_CHECK_RESULTS]]
+=== Recording arbitrary test results ===
+
+Very simply these three checks, xref:OP_PASS[`PASS`],
+xref:OP_FAIL[`FAIL`] and xref:OP_SKIP[`SKIP`] generate the specified
+result. They're intended to be used when what we're trying to test
+doesn't quite fit into any of the two preceding ways of working.
+
+== Suites ==
+
+Suites serve to group tests into managable (and runnable) chunks, they
+make it easy to have many tests defined, but only run those the
+pertain to what we're currently working on. Suites, like tests, have a
+name which can be used to retrieve the suite, and running a suite
+simply causes all of the suite's tests to be run, if the suite
+contains other suites, than those are run as well (and so on and so
+on).
+
+There is one suite that's a little special (in so far as it always
+exists), the `T` suite. If you ignore suites completely, which is a
+good idea at first or for small(ish) code bases, you're actually
+putting all your tests into the `T` suite.
+
+=== Creating Suites ===
+
+Suites are created in one of two ways: Either explicitly via the
+xref:OP_DEF-SUITE[`def-suite`] macro, or implicity via the
+xref:OP_DEF-SUITE-STAR-[`def-suite*`] and/or
+xref:OP_IN-SUITE-STAR-[`in-suite*`] macros:
+
+Suites, very much like tests, have a name (which is globally unique)
+which can be used to retrieve the suite (so that you can run it), and,
+most of the time, suites are part of a suite (the exception being the
+special suite `T`, which is never a part of any suite).
+
+[[THE_CURRENT_SUITE]]
+=== The Current Suite ===
+
+FiveAM also has the concept of a current suite and everytime a test is
+created it adds itself to the current suite's set of tests. The
+`IN-SUITE` and `IN-SUITE*` macros, in a similar fashion to
+`IN-PACKAGE`, change the current suite.
+
+Unless changed via `IN-SUITE` and `IN-SUITE*` the current suite is the
+`T` suite.
+
+Having a default current suite allows developers to ignore suites
+completly and still have FiveAM's suite mechanism in place if they
+want to add suites in later.
+
+[[RUNNING_SUITES]]
+=== Running Suites ===
+
+When a suite is run we do nothing more than run all the tests (and any
+other suites) in the named suite. And, on one level, that's it, suites
+allow you run a whole set of tests at once just by passing in the name
+of the suite.
+
+[[RUNNING_TESTS]]
+== Running Tests ==
+
+The general interface is `run`, this takes a set of tests (or symbol
+that name tests or suites) and returns a list of test results (one
+element for each test run). The output of `run` is, generally, passed
+to the `explain` function which, given an explainer object, produces
+some human readable text describing the test failures. 99% of the time
+a human will be using 5am (as opposed to a continuous integration bot)
+they'll want to run the tests and immediately see the results with
+detailed failure info, this can be done in one step via: `run!` (see
+the first example).
+
+If you want to run a specific test:
+
+--------------------------------
+(run! TEST-NAME)
+--------------------------------
+
+Where `TEST-NAME` is either a test object (as returned by `get-test`)
+or a symbol naming a single test or a test suite.
+
+=== Re-running Tests ===
+
+The function `!`, `!!` and `!!!` rerun recently run tests (we store
+the names passed to run! and simply call run! with those names again).
+
+=== Running Tests at Test Definition Time ===
+
+Often enough, especially when fixing regression bugs, we'll always
+want to run a test right after having changed it. To facilitate this
+set the variable `*run-test-when-defined*` to T and after compiling a
+def-test form we'll call `run!` on the name of the test. For obvious
+reasons you have to set this variable manually after having loaded
+your test suite.
+
+[NOTE]
+Setting `*run-test-when-defined*` will cause `run!` to get called far
+more often than normal. `!` and `!!` and `!!!` don't know that they're
+getting called semi-automatically and will therefore tend to all
+reduce to the same test (which still isn't totally useless behaviour).
+
+=== Debugging failures and errors ===
+
+`*debug-on-error*`::
+
+Normally fiveam will simply capture unexpected errors, record them as
+failures, and move on to the next test (any following checks in the
+test body will not be run). However sometimes, well, all the time
+unless you're running an automated regression test, it's better to not
+capture the error but open up a debugger, set `*debug-on-error*` to
+`T` to get this effect.
+
+`*debug-on-failure*`::
+
+Normally FiveAM will simply record a check failure and move on to the
+next check, however it can be helpful to stop the check and use the
+debugger to see what the state of execution is at the time of the
+test's failure. Setting `*debug-on-failure*` to T will cause FiveAM to
+enter the debugger whenever a test check fails. Exactly what
+information is available is, obviously, implementation dependent.
+
+[[VIEWING_TEST_RESULTS]]
+== Viewing test results ==
+
+FiveAM provides two "explainers", these are classes which, given a set
+of results, produce some human readable/understandable
+output. Explainers are just normal CLOS classes (and can be easily
+subclassed) with one important method: `explain`.
+
+The `run!` and `explain!` functions use the detailed-text-explainer,
+if you want another explainer you'll have to call `run` and `explain`
+yourself:
+
+--------------------------------
+(explain (make-instance MY-EXPLAINER)
+         (run THE-TEST)
+         THE-STREAM)
+--------------------------------
+
+== Random Testing (QuickCheck) ==
+
+Every FiveAM test can be a random test, just use the for-all macro.
+
+== Fixtures ==
+
+TODO.
+
+they're macros with names. you can have tests (and suites)
+automatically wrap themeselves in these macros. not much else to say.
+
+[[API_REFERENCE]]
+== API Reference ==
+
+[[OP_DEF-TEST]]
+=== DEF-TEST ===
+
+================================
+--------------------------------
+(def-test NAME
+    (&key DEPENDS-ON SUITE FIXTURE COMPILE-AT PROFILE) 
+  &body BODY)
+--------------------------------
+
+include::docstrings/OP_DEF-TEST.txt[]
+================================
+
+[[OP_DEF-SUITE]]
+=== DEF-SUITE ===
+
+================================
+`(def-suite NAME &key DESCRIPTION IN FIXTURE)`
+
+include::docstrings/OP_DEF-SUITE.txt[]
+================================
+
+[[OP_IN-SUITE]]
+[[OP_IN-SUITE-STAR-]]
+=== IN-SUITE / IN-SUITE* ===
+
+================================
+`(in-suite NAME)`
+
+include::docstrings/OP_IN-SUITE.txt[]
+================================
+
+================================
+`(in-suite* NAME &key IN)`
+
+include::docstrings/OP_IN-SUITE-STAR-.txt[]
+================================
+
+[[OP_IS]]
+=== IS ===
+
+================================
+----
+(is (PREDICATE EXPECTED ACTUAL) &rest REASON-ARGS)
+
+(is (PREDICATE ACTUAL) &rest REASON-ARGS)
+----
+
+include::docstrings/OP_IS.txt[]
+================================
+
+[[OP_IS-TRUE]]
+[[OP_IS-FALSE]]
+=== IS-TRUE / IS-FALSE / IS-EVERY ===
+
+================================
+`(is-true CONDITION &rest reason)`
+
+include::docstrings/OP_IS-TRUE.txt[]
+================================
+
+================================
+`(is-false CONDITION &rest reason)`
+
+include::docstrings/OP_IS-FALSE.txt[]
+================================
+
+////////////////////////////////
+//// the actual doc string of talks about functionality i don't want
+//// to publises (since it's just weird). se we use our own here
+////////////////////////////////
+================================
+`(is-every predicate &rest (EXPECTED ACTUAL &rest REASON))`
+
+Designed for those cases where you have a large set of expected/actual
+pairs that must be compared using the same predicate function.
+
+Expands into:
+
+----
+(progn
+  (is (,PREDICATE ,EXPECTED ,ACTUAL) ,@REASON)
+  ...
+----
+
+for each argument.
+================================
+
+[[OP_SIGNALS]]
+[[OP_FINISHES]]
+=== SIGNALS / FINISHES ===
+
+================================
+`(signals CONDITION &body body)`
+
+include::docstrings/OP_SIGNALS.txt[]
+================================
+
+================================
+`(finishes &body body)`
+
+include::docstrings/OP_FINISHES.txt[]
+================================
+
+[[OP_PASS]]
+[[OP_FAIL]]
+[[OP_SKIP]]
+=== PASS / FAIL / SKIP ===
+
+================================
+`(skip &rest REASON-ARGS)`
+
+include::docstrings/OP_SKIP.txt[]
+================================
+
+================================
+`(pass &rest REASON-ARGS)`
+
+include::docstrings/OP_PASS.txt[]
+================================
+
+================================
+`(fail &rest REASON-ARGS)`
+
+include::docstrings/OP_FAIL.txt[]
+================================
+
+[[OP_-EPOINT-]]
+[[OP_-EPOINT--EPOINT-]]
+[[OP_-EPOINT--EPOINT--EPOINT-]]
+
+[[OP_RUN-EPOINT-]]
+[[OP_EXPLAIN-EPOINT-]]
+[[OP_DEBUG-EPOINT-]]
+=== RUN! / EXPLAIN! / DEBUG! ===
+
+================================
+`(run! &optional TEST-NAME)`
+
+include::docstrings/OP_RUN-EPOINT-.txt[]
+================================
+
+================================
+`(explain! RESULT-LIST)`
+
+include::docstrings/OP_EXPLAIN-EPOINT-.txt[]
+================================
+
+================================
+`(debug! TEST-NAME)`
+
+include::docstrings/OP_DEBUG-EPOINT-.txt[]
+================================
+
+[[OP_RUN]]
+=== RUN ===
+
+================================
+`(run TEST-SPEC)`
+
+include::docstrings/OP_RUN.txt[]
+================================
+
+=== ! / !! / !!! ===
+
+================================
+`(!)`
+
+include::docstrings/OP_-EPOINT-.txt[]
+================================
+
+================================
+`(!!)`
+
+include::docstrings/OP_-EPOINT--EPOINT-.txt[]
+================================
+
+================================
+`(!!!)`
+
+include::docstrings/OP_-EPOINT--EPOINT--EPOINT-.txt[]
+================================
+
+[[OP_FOR-ALL]]
+=== FOR-ALL ===
+
+================================
+--------------------------------
+(for-all (&rest (NAME VALUE &optional GUARD))
+  &body body)
+--------------------------------
+
+include::docstrings/OP_FOR-ALL.txt[]
+================================
+
+[[VAR_-STAR-NUM-TRIALS-STAR-]]
+[[VAR_-STAR-MAX-TRIALS-STAR-]]
+=== \*NUM-TRIALS* / \*MAX-TRIALS* ===
+
+================================
+`*num-trials*`
+
+include::docstrings/VAR_-STAR-NUM-TRIALS-STAR-.txt[]
+================================
+
+================================
+`*max-trials*`
+
+include::docstrings/VAR_-STAR-MAX-TRIALS-STAR-.txt[]
+================================
+
+[[OP_GEN-INTEGER]]
+[[OP_GEN-FLOAT]]
+=== GEN-INTEGER / GEN-FLOAT ===
+
+================================
+`(gen-integer &key MIN MAX)`
+
+include::docstrings/OP_GEN-INTEGER.txt[]
+================================
+
+================================
+`(gen-float &key BOUND TYPE MIN MAX)`
+
+include::docstrings/OP_GEN-FLOAT.txt[]
+================================
+
+[[OP_GEN-CHARACTER]]
+[[OP_GEN-STRING]]
+=== GEN-CHARACTER / GEN-STRING ===
+
+================================
+`(gen-character &key CODE-LIMIT CODE ALPHANUMERICP)`
+
+include::docstrings/OP_GEN-CHARACTER.txt[]
+================================
+
+================================
+`(gen-string &key LENGTH ELEMENTS)`
+
+include::docstrings/OP_GEN-STRING.txt[]
+================================
+
+[[OP_GEN-BUFFER]]
+=== GEN-BUFFER ===
+
+================================
+`(gen-buffer &key LENGTH ELEMENTS ELEMENT-TYPE)`
+
+include::docstrings/OP_GEN-STRING.txt[]
+================================
+
+[[OP_GEN-LIST]]
+[[OP_GEN-TREE]]
+=== GEN-LIST / GEN-TREE ===
+
+================================
+`(gen-list &key LENGTH ELEMENTS)`
+
+include::docstrings/OP_GEN-LIST.txt[]
+================================
+
+================================
+`(gen-tree &key SIZE ELEMENTS)`
+
+include::docstrings/OP_GEN-TREE.txt[]
+================================
+
+[[OP_GEN-ONE-ELEMENT]]
+=== GEN-ONE-ELEMENT ===
+
+================================
+`(gen-one-element &rest ELEMENTS)`
+
+include::docstrings/OP_GEN-ONE-ELEMENT.txt[]
+================================
+
+
+
+////////////////////////////////
+
+////////////////////////////////

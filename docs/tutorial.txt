@@ -1,0 +1,375 @@
+= FiveAM Tutorial =
+Marco Baringer <mb@bese.it>
+Fall/Winter 2012
+:Author Initials: MB
+:toc:
+:icons:
+:numbered:
+:website: http://common-lisp.net/project/fiveam
+:stylesheet: fiveam.css
+:linkcss:
+
+== Setup ==
+
+Before we even start, we'll need to load FiveAM itself:
+
+--------------------------------
+CL-USER> (quicklisp:quickload :fiveam)
+To load "fiveam":
+  Load 1 ASDF system:
+    fiveam
+; Loading "fiveam"
+
+(:FIVEAM)
+CL-USER> (use-package :5am)
+T
+--------------------------------
+
+== Failure For Beginners ==
+
+Now, this is a tutorial to the testing framework FiveAM. Over the
+course of this tutorial we're going to test an implementation of
+link:https://en.wikipedia.org/wiki/Peano_axioms[peano numbers]
+(basically, pretend that lisp didn't have integers or arithmetic built
+in and we wanted to add it in the least efficent way possible). The
+first thing we need is the constant `0`, a function `zero-p` for
+testing if a number is zero, and function `succ` which, given a number
+`N`, returns its successor (in other words `N + 1`).
+
+It's still not totally clear to me what the `succ` function should
+look like, but the `zero` and `zero-p` functions are easy enough, so
+let's define a test for those two funtions. We'll start by testing
+`zero` as much as we can:
+
+--------------------------------
+(def-test zero ()
+  (finishes (zero)))
+--------------------------------
+
+[NOTE]
+ignore the second argument to def-test for now. if it helps pretend it's filler to make the identation look better.
+
+Since we don't know, nor really care at this stage, what the function
+`zero` returns, we simply use the
+link:manual.html#FUNCTION_FINISHES[`FINISHES`] macro to make sure that
+the function does in fact return (as opposed to signaling some weird
+error). Our `zero-p` test, on the other hand, does actually have
+something we can test. Whatever is returned by `zero` should be
+`zero-p`:
+
+--------------------------------
+(def-test zero-p ()
+  (is-true (zero-p (zero))))
+--------------------------------
+
+Finally, let's run our tests:
+
+--------------------------------
+CL-USER> (run!)
+XXf
+ Did 2 checks.
+    Pass: 0 ( 0%)
+    Skip: 0 ( 0%)
+    Fail: 2 (100%)
+
+ Failure Details:
+ --------------------------------
+ ZERO []: 
+ Unexpected Error: #<UNDEFINED-FUNCTION ZERO {10058AD6F3}>
+The function COMMON-LISP-USER::ZERO is undefined..
+ --------------------------------
+ --------------------------------
+ ZERO-P []: 
+ Unexpected Error: #<UNDEFINED-FUNCTION ZERO {10056FE5A3}>
+The function COMMON-LISP-USER::ZERO is undefined..
+ --------------------------------
+
+--------------------------------
+
+so, 100% failure rate, and even an Unexpected error...that's bad, but
+it's also what we should have been expecting given that we haven't
+actually defined `zero-p` or `zero`. So, let's define those two
+functions:
+
+--------------------------------
+CL-USER> (defun zero () 'zero)
+ZERO
+CL-USER> (defun zero-p (value) (eql 'zero value))
+ZERO-P
+--------------------------------
+
+Now let's run our test again:
+
+--------------------------------
+CL-USER> (run!)
+..
+ Did 2 checks.
+    Pass: 2 (100%)
+    Skip: 0 ( 0%)
+    Fail: 0 ( 0%)
+--------------------------------
+
+Much better.
+
+[NOTE]
+TEST ALL THE THINGS!
+.
+There's actually a bit of work being done with suites and default
+tests and stuff in order to make that `run!` call do what it just did
+(call our previously defined tests). If you never create a suite on
+your own then you can think of `run!` as being the 'run every test'
+function, if you start creating your own suites (and you will
+eventually), then you'll want to know that run's second, optional,
+argument is the name of a test or suite to run, but until then just go
+with `(run!)`.
+
+== More code ==
+
+So, we have zero, and we can test for zero ness, wouldn't it be nice
+to have the number one too? How about the number two? how about a
+billion? I like the number 1 billion. Now, since we thoroughly read
+through the wiki page on peano numbers we now that there's a function,
+called `succ` which, give one number returns the "next" one. In this
+implementation we're going to represent numbers as nested lists, so
+our `succ` function just wraps its input in another cons cell:
+
+--------------------------------
+(defun succ (number)
+  (cons number nil))
+--------------------------------
+
+Easy enough. That could also be right, it could also be wrong too, we
+don't really have a way to check (yet). We do know one thing though,
+the `succ` of any number (even zero) isn't zero. So let's redefine our
+zero test to check that zero plus one isn't zero:
+
+--------------------------------
+(def-test zero-p ()
+  (is-true  (zero-p (zero)))
+  (is-false (zero-p (succ (zero)))))
+--------------------------------
+
+and let's run the test:
+
+--------------------------------
+CL-USER> (run!)
+...
+ Did 3 checks.
+    Pass: 3 (100%)
+    Skip: 0 ( 0%)
+    Fail: 0 ( 0%)
+--------------------------------
+
+Nice! 
+
+== Elementary, my dear watson. Run the test. ==
+
+When working interactively like this, we almost always define a
+test and then immediately run it, we can tell fiveam to do that
+automatically by setting `*run-test-when-defined*` to T:
+
+--------------------------------
+CL-USER> (setf *run-test-when-defined* t)
+T
+--------------------------------
+
+Now if we were to redefine (either via the repl as I'm doing here or
+via C-cC-c in a slime buffer), we'll see:
+
+--------------------------------
+CL-USER> (def-test zero-p ()
+  (is-true (zero-p (zero)))
+  (is-false (zero-p (plus-one (zero)))))
+..
+ Did 2 checks.
+    Pass: 2 (100%)
+    Skip: 0 ( 0%)
+    Fail: 0 ( 0%)
+ZERO-P
+--------------------------------
+
+Great, at this point it's time we add a function for testing integer
+equality (in other words, `cl:=`). Let's try with this:
+
+--------------------------------
+CL-USER> (defun equiv (a b)
+  (and (zero-p a) (zero-p b)))
+EQUIV
+--------------------------------
+
+[NOTE]
+Since i'm doing everything in the package common-lisp-user i
+couldn't use the name `=` (or even `equal`). I don't want to talk
+about packages at this point, so we'll just have to live with `equiv`
+for now.
+
+And let's test it:
+
+--------------------------------
+CL-USER> (def-test equiv () (equiv (zero) (zero)))
+ Didn't run anything...huh?
+EQUIV
+--------------------------------
+
+Well, that's not what I was expecting. I'd forgotten that FiveAM,
+unlike other test frameworks, doesn't actually look at the return
+value of the function, it only runs its so called checks (one of which
+is the `is-true` function we've been using so far). So let's add that
+in and try again:
+
+--------------------------------
+CL-USER> (def-test equiv () 
+           (is-true (equiv (zero) (zero))))
+.
+ Did 1 check.
+    Pass: 1 (100%)
+    Skip: 0 ( 0%)
+    Fail: 0 ( 0%)
+
+EQUIV
+--------------------------------
+
+== Failing, but gently. ==
+
+Nice, now, finally, we can test that 1 is equal to 1 (or, in our
+implementation, the successor of zero is equal to the successor of
+zero):
+
+--------------------------------
+CL-USER> (def-test equiv ()
+           (is-true (equiv (zero) (zero)))
+           (is-true (equiv (succ (zero)) (succ (zero)))))
+.f
+ Did 2 checks.
+    Pass: 1 (50%)
+    Skip: 0 ( 0%)
+    Fail: 1 (50%)
+
+ Failure Details:
+ --------------------------------
+ EQUIV []: 
+ (EQUIV (SUCC (ZERO)) (SUCC (ZERO))) did not return a true value
+ --------------------------------
+
+EQUIV
+--------------------------------
+
+Oh, cry, baby cry. The important part of that output is this line:
+
+--------------------------------
+ EQUIV []: 
+ (EQUIV (SUCC (ZERO)) (SUCC (ZERO))) did not return a true value
+--------------------------------
+
+That means that, in the test `EQUIV` the form `(EQUIV (SUCC (ZERO))
+(SUCC (ZERO)))` evaluated to NIL. I wonder why? It'd be nice to see
+what the values evaluated to, what the actual arguments and return
+value of `EQUIV` was. There are two things we could do at this point:
+
+. Set 5am:*debug-on-failure* to `T` and re-run the test and dig around
+  in the backtrace for the info we need.
+
+. Use the `IS` check macro to get a more informative message in the
+  output.
+
+In practice you'll end up using a combination of both (though i prefer
+that tests run to completion without hitting the debugger, and this
+may have influenced fiveam a bit, but others prefer working with live
+data in a debugger window and that's an equally valid approach).
+
+== Tell me what I need to know ==
+
+However, since this a non-interactive static file, and debuggers are
+really interactive and implementation specific, I'm going to go with
+the second option for now, here's the same test using the `IS` check
+instead of `IS-TRUE`:
+
+--------------------------------
+CL-USER> (def-test equiv ()
+           (is (equiv (zero) (zero)))
+           (is (equiv (succ (zero)) (succ (zero)))))
+.f
+ Did 2 checks.
+    Pass: 1 (50%)
+    Skip: 0 ( 0%)
+    Fail: 1 (50%)
+
+ Failure Details:
+ --------------------------------
+ EQUIV []: 
+ 
+(SUCC (ZERO)) <1>
+
+ evaluated to 
+
+(ZERO) <2>
+
+ which is not 
+
+EQUIV <3>
+
+ to 
+
+(ZERO) <4>
+
+ --------------------------------
+
+EQUIV
+
+<1> actual value's source code
+<2> actual value's value
+<3> comparison operator
+<4> expected value
+--------------------------------
+
+I need to mention something at this point: the `IS-TRUE` and `IS`
+macro do not do anything different at run time. They both have some
+code, which they run, and if the result is NIL they record a failure
+and if not they record a success (which 5am calls a pass). The only
+difference is in how they report a failure: The `IS-TRUE` function
+just stores the source form and prints that back, the `IS` macro
+assumes that the form has a specific format:
+
+    (TEST-FUNCTION EXPECTED-VALUE ACTUAL-VALUE)
+
+and generates a failure message based on that. In this case we
+evaluated `(succ (zero))`, and got `(zero)`, and passed this value,
+along with the result of the expected value (`(succ (zero))`) to
+`equiv` and got `NIL`.
+
+Now, back to our test, it's actually pretty obvious that our current
+implementation of equiv:
+
+--------------------------------
+(defun equiv (a b)
+  (and (zero-p a) (zero-p b)))
+--------------------------------
+
+is buggy, so let's fix and run the test again:
+
+--------------------------------
+CL-USER> (defun equiv (a b)
+           (if (and (zero-p a) (zero-p b))
+               t
+               (equiv (car a) (car b))))
+EQUIV
+CL-USER> (!)
+..
+ Did 2 checks.
+    Pass: 2 (100%)
+    Skip: 0 ( 0%)
+    Fail: 0 ( 0%)
+
+NIL
+--------------------------------
+
+== Again, from the top ==
+
+Great, our tests passed. You'll notice though that this time we used
+the `!` function instead of `run!`. 
+
+== Birds of a feather flock together. Horses of a different color stay home. ==
+
+So far we've always defined and run single tests, while it's certainly
+possible to continue this way it gets unweidly pretty quickly.
+
