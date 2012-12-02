@@ -298,7 +298,7 @@ or a symbol naming a single test or a test suite.
 
 === Re-running Tests ===
 
-The function `!`, `!!` and `!!!` rerun recently run tests (we store
+The functions `!`, `!!` and `!!!` rerun recently run tests (we store
 the names passed to run! and simply call run! with those names again).
 
 === Running Tests at Test Definition Time ===
@@ -355,6 +355,8 @@ yourself:
 --------------------------------
 
 == Random Testing (QuickCheck) ==
+
+TODO.
 
 Every FiveAM test can be a random test, just use the for-all macro.
 
