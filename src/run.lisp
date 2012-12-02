@@ -221,7 +221,7 @@ run."))
 ;;;; ** Public entry points
 
 (defun run! (&optional (test-spec *suite*))
-  "Shortcut for (explain! (run TEST-SPEC))."
+  "Equivalent to (explain! (run TEST-SPEC))."
   (explain! (run test-spec)))
 
 (defun explain! (result-list)
@@ -235,22 +235,35 @@ detailed-text-explainer with output going to `*test-dribble*`"
         (*debug-on-failure* t))
     (run! test-spec)))
 
+(defun reset-all-tests-status (&optional (tests *test*))
+  "Resets the status of all TESTS to :unknown."
+  (maphash-values
+   (lambda (test)
+     (setf (status test) :unknown))
+   tests))
+
+(defun run-and-set-recently (function)
+  "Shifts the recently executed tests and lastly executes FUNCTION."
+  (shiftf *!!!* *!!* *!* function)
+  (funcall function))
+
+(defun run-and-bind-result-list (function)
+  (run-and-set-recently
+   (lambda ()
+     (reset-all-tests-status)
+     (bind-run-state ((result-list '()))
+       (with-simple-restart
+           (explain "Ignore the rest of the tests and explain current results")
+         (funcall function))
+       result-list))))
+
 (defun run (test-spec)
   "Run the test specified by TEST-SPEC.
 
 TEST-SPEC can be either a symbol naming a test or test suite, or
 a testable-object object. This function changes the operations
 performed by the !, !! and !!! functions."
-  (psetf *!* (lambda ()
-               (loop :for test :being :the :hash-keys :of *test*
-                     :do (setf (status (get-test test)) :unknown))
-               (bind-run-state ((result-list '()))
-                 (with-simple-restart (explain "Ignore the rest of the tests and explain current results")
-                   (%run test-spec))
-                 result-list))
-         *!!* *!*
-         *!!!* *!!*)
-  (funcall *!*))
+  (run-and-bind-result-list (lambda () (%run test-spec))))
 
 (defun ! ()
   "Rerun the most recently run test and explain the results."
@@ -263,6 +276,35 @@ performed by the !, !! and !!! functions."
 (defun !!! ()
   "Rerun the third most recently run test and explain the results."
   (explain! (funcall *!!!*)))
+
+(defun run-all-tests ()
+  "Run all tests in arbitrary order."
+  (run-and-bind-result-list
+   (lambda ()
+     (maphash-values
+      (lambda (test)
+        (when (typep test 'test-case)
+          (%run test)))
+      *test*))))
+
+(defun run-all-tests! ()
+  "Equivalent to (explain! (run-all-tests))."
+  (explain! (run-all-tests)))
+
+(defun run-all-test-suites ()
+  "Run all test suites in arbitrary order."
+  (run-and-bind-result-list
+   (lambda ()
+     (maphash-values
+      (lambda (test)
+        (when (typep test 'test-suite)
+          (format *test-dribble* "~& ~A: " (name test))
+          (%run test)))
+      *test*))))
+
+(defun run-all-test-suites! ()
+  "Equivalent to (explain (run-all-test-suites))."
+  (explain! (run-all-test-suites)))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved.

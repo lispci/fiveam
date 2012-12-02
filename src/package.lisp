@@ -65,9 +65,12 @@
    ;; running tests
    #:run
    #:run-all-tests
+   #:run-all-test-suites
    #:explain
    #:explain!
    #:run!
+   #:run-all-tests!
+   #:run-all-test-suites!
    #:debug!
    #:!
    #:!!
