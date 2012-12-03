@@ -53,6 +53,8 @@ will overrwrite any existing suite named `NAME`."
       (when (gethash test-name (tests s))
         (remhash test-name (tests s))))))
 
+(declaim (special *suite*))
+
 (defun make-suite (name &key description ((:in parent-suite) *suite*) fixture)
   "Create a new test suite object.
 

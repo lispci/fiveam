@@ -45,6 +45,8 @@ named KEY in the *TEST* hash table."
       (ensure-list name)
     `(def-test ,name (,@args) ,@body)))
 
+(declaim (special *suite*))
+
 (defmacro def-test (name (&key (suite nil suite-p)
                                fixture
                                (compile-at :run-time)
