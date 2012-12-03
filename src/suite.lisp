@@ -16,6 +16,8 @@
 
 ;;;; ** Creating Suits
 
+(defvar *suites* (make-hash-table))
+
 (defmacro def-suite (name &key description in)
   "Define a new test-suite named NAME.
 
@@ -24,9 +26,10 @@ suite named by IN. NB: This macro is built on top of make-suite,
 as such it, like make-suite, will overrwrite any existing suite
 named NAME."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (make-suite ',name
-                 ,@(when description `(:description ,description))
-                 ,@(when in `(:in ',in)))
+     (setf (gethash ',name *suites*)
+           (make-suite ',name
+                       ,@(when description `(:description ,description))
+                       ,@(when in `(:in ',in))))
      ',name))
 
 (defmacro def-suite* (name &rest def-suite-args)
@@ -51,6 +54,10 @@ Overrides any existing suite named NAME."
                (setf (gethash name (tests in-suite)) suite)))
     (setf (get-test name) suite)
     suite))
+
+(defun list-all-suites ()
+  (loop for suite being the hash-value in *suites*
+       collect suite))
 
 ;;;; ** Managing the Current Suite
 
