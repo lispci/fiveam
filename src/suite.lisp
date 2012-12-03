@@ -74,8 +74,8 @@ Overrides any existing suite named NAME."
     suite))
 
 (defun list-all-suites ()
-  (loop for suite being the hash-value in *suites*
-        collect suite))
+  "Returns an unordered LIST of all suites."
+  (hash-table-values *suites*))
 
 ;;;; ** Managing the Current Suite
 
