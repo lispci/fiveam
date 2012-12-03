@@ -29,8 +29,7 @@
   (remhash key *test*))
 
 (defun test-names ()
-  (loop for test being the hash-keys of *test*
-        collect test))
+  (hash-table-keys *test*))
 
 (defmacro test (name &body body)
   "Create a test named NAME. If NAME is a list it must be of the
