@@ -28,21 +28,22 @@
   (remhash key *fixture*))
 
 (defmacro def-fixture (name (&rest args) &body body)
-  "Defines a fixture named NAME. A fixture is very much like a
-macro but is used only for simple templating. A fixture created
-with DEF-FIXTURE is a macro which can use the special macrolet
-&BODY to specify where the body should go.
+  "Defines a fixture named NAME. At \"evaluation time\" (not macro
+expansion time) `BODY` will be run, however `BODY` can call the local
+macro `&body` which will expand to the body passed to the
+`with-fixture` call.
 
-See Also: WITH-FIXTURE
-"
+See Also: `WITH-FIXTURE`"
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (setf (get-fixture ',name) (cons ',args ',body))
      ',name))
 
 (defmacro with-fixture (fixture-name (&rest args) &body body)
-  "Insert BODY into the fixture named FIXTURE-NAME.
+  "Lookup a fixture named `NAME` (at macro expansion time),
+replace the fixture's `&body` with `BODY` and compile the resulting
+form.
 
-See Also: DEF-FIXTURE"
+See Also: `DEF-FIXTURE`"
   (assert (get-fixture fixture-name)
           (fixture-name)
           "Unknown fixture ~S." fixture-name)

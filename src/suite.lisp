@@ -25,20 +25,20 @@ NAME::
   The symbol naming the test.
 
 DESCRIPTION::
-  A string describing the contents/purpose of this suite. 
+  A string describing the contents/purpose of this suite.
 
-IN (a symbol), if provided, causes this suite te be nested in the
-suite named by `IN`. If `IN` is `NIL`, as opposed to not being passed
-at all, the new suite will not be a part of any existing suite.
+IN (a symbol)::
+  If provided, causes this suite te be nested in the suite named by
+  `IN`. If `IN` is `NIL`, as opposed to not being passed at all, the
+  new suite will not be a part of any existing suite.
+
+FIXTURE::
+  Whatever value is passed here will be passed, unevaluated, to all
+  tests defined in this suite.
 
 [NOTE]
 This macro is built on top of `make-suite` as such it, like `make-suite`,
-will overrwrite any existing suite named `NAME`.
-
-DESCRIPTION is just a string.
-
-FIXTURE is the fixture argument (exactly like the `:fixture` argument to
-def-test) to pass to tests in this suite."
+will overrwrite any existing suite named `NAME`."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (make-suite ',name
                  ,@(when description `(:description ,description))
@@ -98,7 +98,7 @@ See also: `DEF-SUITE` and `*SUITE*`. "
 
 (defmacro in-suite* (suite-name &rest def-suite-args)
   "Same effect as `IN-SUITE`, but if `SUITE-NAME` does not exist it
-will be created (as per DEF-SUITE)"
+will be created (as per `DEF-SUITE`)"
   `(%in-suite ,suite-name
               :fail-on-error nil
               ,@def-suite-args))

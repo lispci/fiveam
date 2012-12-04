@@ -23,7 +23,7 @@ xref:OP_DEF-TEST[`def-test`]), each of which consists of some
 xref:CHECKS[checks] (with xref:OP_IS[`is`] and friends) which can pass
 or fail; you xref:RUNNING_TESTS[run] some tests (using
 xref:OP_RUN-EPOINT-[run!] and friends) and you look at the results
-(probably using xref:OP_RUN-EPOINT-[run!] again). Rinse, lather,
+(probably using xref:OP_RUN-EPOINT-[run!] again). Lather, rinse,
 repeat.
 
 === The Real Introduction ===
@@ -227,11 +227,11 @@ doesn't quite fit into any of the two preceding ways of working.
 == Suites ==
 
 Suites serve to group tests into managable (and runnable) chunks, they
-make it easy to have many tests defined, but only run those the
+make it easy to have many tests defined, but only run those that
 pertain to what we're currently working on. Suites, like tests, have a
 name which can be used to retrieve the suite, and running a suite
 simply causes all of the suite's tests to be run, if the suite
-contains other suites, than those are run as well (and so on and so
+contains other suites, then those are run as well (and so on and so
 on).
 
 There is one suite that's a little special (in so far as it always
@@ -250,6 +250,17 @@ Suites, very much like tests, have a name (which is globally unique)
 which can be used to retrieve the suite (so that you can run it), and,
 most of the time, suites are part of a suite (the exception being the
 special suite `T`, which is never a part of any suite).
+
+For example these two forms will first define a suite called
+`:my-project`, then define a second suite called `:my-db-layer`, which
+is a sub suite of `:my-project` and set the current suite to
+`:my-db-layer`:
+
+--------------------------------
+(def-suite :my-project)
+
+(in-suite* :my-db-layer :in :my-project)
+--------------------------------
 
 [[THE_CURRENT_SUITE]]
 === The Current Suite ===
@@ -274,18 +285,31 @@ other suites) in the named suite. And, on one level, that's it, suites
 allow you run a whole set of tests at once just by passing in the name
 of the suite.
 
+[[SUITE_FIXTURES]]
+=== Per-suite Fixtures ===
+
+xref:FIXTURES[Fixtures] can also be associated with suite. Often
+enough when testing an external component, a database or a network
+server or something, we'll have multiple tests which all use a mock
+version of this component. It is often easier to associate the fixture
+with the suite directly than have to do this for every individual
+test. Associating a fixture to a suite doesn't change the suite at
+all, only when a test is then defined in that suite, then the fixture
+will be applied to the test's body (unless the test's own `def-test`
+form explicitly uses another fixture).
+
 [[RUNNING_TESTS]]
 == Running Tests ==
 
 The general interface is `run`, this takes a set of tests (or symbol
 that name tests or suites) and returns a list of test results (one
-element for each test run). The output of `run` is, generally, passed
-to the `explain` function which, given an explainer object, produces
-some human readable text describing the test failures. 99% of the time
-a human will be using 5am (as opposed to a continuous integration bot)
-they'll want to run the tests and immediately see the results with
-detailed failure info, this can be done in one step via: `run!` (see
-the first example).
+element for each check that was executed). The output of `run` is,
+generally, passed to the `explain` function which, given an explainer
+object, produces some human readable text describing the test
+failures. The 99% of the time a human will be using 5am (as opposed to
+a continuous integration bot) they'll want to run the tests and
+immediately see the results with detailed failure info, this can be
+done in one step via: `run!` (see the first example).
 
 If you want to run a specific test:
 
@@ -298,8 +322,16 @@ or a symbol naming a single test or a test suite.
 
 === Re-running Tests ===
 
-The functions `!`, `!!` and `!!!` rerun recently run tests (we store
-the names passed to run! and simply call run! with those names again).
+The `run!` function stores its arguments in a set of variables and,
+via the functions `!`, `!!` and `!!!` will rerun those named
+tests. Note that we're deliberatly talking about names, and not test
+objects, `!` will take the last argument passed to `run!` and call
+`run!` with that again, looking up the test again if the argument was
+a symbol.
+
+This ensures that `!` will always run the current definition of a
+test, even if the test has been redefined since the last time `run!`
+was called.
 
 === Running Tests at Test Definition Time ===
 
@@ -362,10 +394,45 @@ Every FiveAM test can be a random test, just use the for-all macro.
 
 == Fixtures ==
 
-TODO.
+Fixtures are, much like macros, ways to hide common code so that the
+essential functionality we're trying to test is easier to see. Unlike
+normal macros fixtures are not allowed to inspect the source code of
+their arguments, all they can really do is wrap one form (or multiple
+forms in a progn) in something else.
 
-they're macros with names. you can have tests (and suites)
-automatically wrap themeselves in these macros. not much else to say.
+[NOTE] 
+Fixtures exist for the common case where we want to bind some
+variables to some mock (or test) values and run our test in this
+state. If anything more complicated than this is neccessary just use a
+normal macro.
+
+Fixtures are defined via the `def-fixture` macro and used either with
+`with-fixture` directory or, more commonly, using the `:fixture`
+argument to `def-test` or `def-suite`. A common example of a fixture
+would be this:
+
+--------------------------------
+(def-fixture mock-db ()
+  (let ((*database* (make-instance 'mock-db))
+        (*connection* (make-instance 'mock-connection)))
+    (unwind-protect
+        (&body) <1>
+      (mock-close-connection *connection*))))
+
+(with-fixture mock-db ()
+  (is-true (database-p *database*)))
+
+<1> This is a local macro named 5AM:&BODY (the user of def-fixture can
+not change this name)
+
+--------------------------------
+
+The body of the `def-fixture` has one local function (actually a local
+macro) called `&body` which will expand into whatever the body passed
+to `with-fixture` is. `def-fixture` also has an argument list, but
+there are two things to note: 1) in practice it's rarely used; 2)
+these are arguments will be bound to values (like defun) and not
+source code (like defmacro).
 
 [[API_REFERENCE]]
 == API Reference ==
@@ -387,7 +454,9 @@ include::docstrings/OP_DEF-TEST.txt[]
 === DEF-SUITE ===
 
 ================================
-`(def-suite NAME &key DESCRIPTION IN FIXTURE)`
+----
+(def-suite NAME &key DESCRIPTION IN FIXTURE)
+----
 
 include::docstrings/OP_DEF-SUITE.txt[]
 ================================
@@ -397,13 +466,17 @@ include::docstrings/OP_DEF-SUITE.txt[]
 === IN-SUITE / IN-SUITE* ===
 
 ================================
-`(in-suite NAME)`
+----
+(in-suite NAME)
+----
 
 include::docstrings/OP_IN-SUITE.txt[]
 ================================
 
 ================================
-`(in-suite* NAME &key IN)`
+----
+(in-suite* NAME &key IN)
+----
 
 include::docstrings/OP_IN-SUITE-STAR-.txt[]
 ================================
@@ -426,13 +499,17 @@ include::docstrings/OP_IS.txt[]
 === IS-TRUE / IS-FALSE / IS-EVERY ===
 
 ================================
-`(is-true CONDITION &rest reason)`
+----
+(is-true CONDITION &rest reason)
+----
 
 include::docstrings/OP_IS-TRUE.txt[]
 ================================
 
 ================================
-`(is-false CONDITION &rest reason)`
+----
+(is-false CONDITION &rest reason)
+----
 
 include::docstrings/OP_IS-FALSE.txt[]
 ================================
@@ -442,7 +519,9 @@ include::docstrings/OP_IS-FALSE.txt[]
 //// to publises (since it's just weird). se we use our own here
 ////////////////////////////////
 ================================
-`(is-every predicate &rest (EXPECTED ACTUAL &rest REASON))`
+----
+(is-every predicate &rest (EXPECTED ACTUAL &rest REASON))
+----
 
 Designed for those cases where you have a large set of expected/actual
 pairs that must be compared using the same predicate function.
@@ -463,13 +542,17 @@ for each argument.
 === SIGNALS / FINISHES ===
 
 ================================
-`(signals CONDITION &body body)`
+----
+(signals CONDITION &body body)
+----
 
 include::docstrings/OP_SIGNALS.txt[]
 ================================
 
 ================================
-`(finishes &body body)`
+----
+(finishes &body body)
+----
 
 include::docstrings/OP_FINISHES.txt[]
 ================================
@@ -480,19 +563,25 @@ include::docstrings/OP_FINISHES.txt[]
 === PASS / FAIL / SKIP ===
 
 ================================
-`(skip &rest REASON-ARGS)`
+----
+(skip &rest REASON-ARGS)
+----
 
 include::docstrings/OP_SKIP.txt[]
 ================================
 
 ================================
-`(pass &rest REASON-ARGS)`
+----
+(pass &rest REASON-ARGS)
+----
 
 include::docstrings/OP_PASS.txt[]
 ================================
 
 ================================
-`(fail &rest REASON-ARGS)`
+----
+(fail &rest REASON-ARGS)
+----
 
 include::docstrings/OP_FAIL.txt[]
 ================================
@@ -507,19 +596,25 @@ include::docstrings/OP_FAIL.txt[]
 === RUN! / EXPLAIN! / DEBUG! ===
 
 ================================
-`(run! &optional TEST-NAME)`
+----
+(run! &optional TEST-NAME)
+----
 
 include::docstrings/OP_RUN-EPOINT-.txt[]
 ================================
 
 ================================
-`(explain! RESULT-LIST)`
+----
+(explain! RESULT-LIST)
+----
 
 include::docstrings/OP_EXPLAIN-EPOINT-.txt[]
 ================================
 
 ================================
-`(debug! TEST-NAME)`
+----
+(debug! TEST-NAME)
+----
 
 include::docstrings/OP_DEBUG-EPOINT-.txt[]
 ================================
@@ -528,7 +623,9 @@ include::docstrings/OP_DEBUG-EPOINT-.txt[]
 === RUN ===
 
 ================================
-`(run TEST-SPEC)`
+----
+(run TEST-SPEC)
+----
 
 include::docstrings/OP_RUN.txt[]
 ================================
@@ -536,21 +633,49 @@ include::docstrings/OP_RUN.txt[]
 === ! / !! / !!! ===
 
 ================================
-`(!)`
+----
+(!)
+----
 
 include::docstrings/OP_-EPOINT-.txt[]
 ================================
 
 ================================
-`(!!)`
+----
+(!!)
+----
 
 include::docstrings/OP_-EPOINT--EPOINT-.txt[]
 ================================
 
 ================================
-`(!!!)`
+----
+(!!!)
+----
 
 include::docstrings/OP_-EPOINT--EPOINT--EPOINT-.txt[]
+================================
+
+[[OP_DEF-FIXTURE]]
+=== DEF-FIXTURE ===
+
+================================
+----
+(def-fixture (NAME (&rest ARGS) &body BODY)
+----
+
+include::docstrings/OP_DEF-FIXTURE.txt[]
+================================
+
+[[OP_WITH-FIXTURE]]
+=== WITH-FIXTURE ===
+
+================================
+----
+(with-fixture NAME (&rest ARGS) &body BODY)
+----
+
+include::docstrings/OP_WITH-FIXTURE.txt[]
 ================================
 
 [[OP_FOR-ALL]]
@@ -570,13 +695,17 @@ include::docstrings/OP_FOR-ALL.txt[]
 === \*NUM-TRIALS* / \*MAX-TRIALS* ===
 
 ================================
-`*num-trials*`
+----
+*num-trials*
+----
 
 include::docstrings/VAR_-STAR-NUM-TRIALS-STAR-.txt[]
 ================================
 
 ================================
-`*max-trials*`
+----
+*max-trials*
+----
 
 include::docstrings/VAR_-STAR-MAX-TRIALS-STAR-.txt[]
 ================================
@@ -586,13 +715,17 @@ include::docstrings/VAR_-STAR-MAX-TRIALS-STAR-.txt[]
 === GEN-INTEGER / GEN-FLOAT ===
 
 ================================
-`(gen-integer &key MIN MAX)`
+----
+(gen-integer &key MIN MAX)
+----
 
 include::docstrings/OP_GEN-INTEGER.txt[]
 ================================
 
 ================================
-`(gen-float &key BOUND TYPE MIN MAX)`
+----
+(gen-float &key BOUND TYPE MIN MAX)
+----
 
 include::docstrings/OP_GEN-FLOAT.txt[]
 ================================
@@ -602,13 +735,17 @@ include::docstrings/OP_GEN-FLOAT.txt[]
 === GEN-CHARACTER / GEN-STRING ===
 
 ================================
-`(gen-character &key CODE-LIMIT CODE ALPHANUMERICP)`
+----
+(gen-character &key CODE-LIMIT CODE ALPHANUMERICP)
+----
 
 include::docstrings/OP_GEN-CHARACTER.txt[]
 ================================
 
 ================================
-`(gen-string &key LENGTH ELEMENTS)`
+----
+(gen-string &key LENGTH ELEMENTS)
+----
 
 include::docstrings/OP_GEN-STRING.txt[]
 ================================
@@ -617,7 +754,9 @@ include::docstrings/OP_GEN-STRING.txt[]
 === GEN-BUFFER ===
 
 ================================
-`(gen-buffer &key LENGTH ELEMENTS ELEMENT-TYPE)`
+----
+(gen-buffer &key LENGTH ELEMENTS ELEMENT-TYPE)
+----
 
 include::docstrings/OP_GEN-STRING.txt[]
 ================================
@@ -627,13 +766,18 @@ include::docstrings/OP_GEN-STRING.txt[]
 === GEN-LIST / GEN-TREE ===
 
 ================================
-`(gen-list &key LENGTH ELEMENTS)`
+----
+(gen-list &key LENGTH ELEMENTS)
+----
 
 include::docstrings/OP_GEN-LIST.txt[]
 ================================
 
 ================================
-`(gen-tree &key SIZE ELEMENTS)`
+
+----
+(gen-tree &key SIZE ELEMENTS)
+----
 
 include::docstrings/OP_GEN-TREE.txt[]
 ================================
@@ -642,7 +786,9 @@ include::docstrings/OP_GEN-TREE.txt[]
 === GEN-ONE-ELEMENT ===
 
 ================================
-`(gen-one-element &rest ELEMENTS)`
+----
+(gen-one-element &rest ELEMENTS)
+----
 
 include::docstrings/OP_GEN-ONE-ELEMENT.txt[]
 ================================
