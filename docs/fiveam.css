@@ -1,6 +1,8 @@
 body {
-  width: 560px;
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 20px;
+    width: 42em;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20px;
 }
+
+h1, h2 { width: 30em; }

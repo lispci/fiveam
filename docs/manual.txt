@@ -13,18 +13,53 @@ Fall/Winter 2012
 
 === The Super Brief Introduction ===
 
-FiveAM is a testing framework. See the xref:API_REFERENCE[api] for
-details.
+|================================
+| (xref:OP_DEF-TEST[`def-test`] `NAME` () &body `BODY`) | define tests
+| (xref:OP_IS[`is`] (`PREDICATE` `EXPECTED` `ACTUAL`)) | check that, according to `PREDICATE` our `ACTUAL` is the same as our `EXPECTED`
+| (xref:OP_IS[`is-true`] VALUE) | check that a value is non-NIL
+| (xref:OP_RUN![`run!`] TEST-NAME) | run one (or more) tests and print the results
+| (xref:OP_RUN![`!`]) | rerun the most recently run test.
+|================================
+
+See the xref:API_REFERENCE[api] for details.
 
 === An Ever So Slightly Longer Introduction ===
 
 You use define some xref:TESTS[tests] (using
 xref:OP_DEF-TEST[`def-test`]), each of which consists of some
 xref:CHECKS[checks] (with xref:OP_IS[`is`] and friends) which can pass
-or fail; you xref:RUNNING_TESTS[run] some tests (using
-xref:OP_RUN-EPOINT-[run!] and friends) and you look at the results
-(probably using xref:OP_RUN-EPOINT-[run!] again). Lather, rinse,
-repeat.
+or fail:
+
+--------------------------------
+(def-test a-test ()
+  (is (= 4 (+ 2 2)))
+  (is-false (= 5 (+ 2 2))))
+--------------------------------
+
+you xref:RUNNING_TESTS[run] some tests (using xref:OP_RUN[run] and
+friends) and you look at the results (using using
+xref:OP_EXPLAIN[explain]); or you do both at once (using
+xref:OP_RUN-EPOINT-[run!]):
+
+--------------------------------
+CL-USER> (run! 'a-test)
+..
+Did 2 checks.
+  Pass: 2 (100%)
+  Skip: 0 (  0%)
+  Fail: 0 (  0%)
+--------------------------------
+
+Lather, rinse, repeat:
+
+--------------------------------
+CL-USER> (!)
+..
+Did 2 checks.
+  Pass: 2 (100%)
+  Skip: 0 (  0%)
+  Fail: 0 (  0%)
+--------------------------------
 
 === The Real Introduction ===
 
@@ -62,7 +97,7 @@ behaviour driven development. patches welcome (they'll get laughed at
 at first, but they'll get applied, and then they'll get used, and then
 they'll be an essential part of fiveam itself...)
 
-=== Words ===
+==== Words ====
 
 Since there are far many more testing frameworks than there are words
 for talking about testing frameworks, the same words end up meaning
@@ -442,9 +477,7 @@ source code (like defmacro).
 
 ================================
 --------------------------------
-(def-test NAME
-    (&key DEPENDS-ON SUITE FIXTURE COMPILE-AT PROFILE) 
-  &body BODY)
+(def-test NAME (&key DEPENDS-ON SUITE FIXTURE COMPILE-AT PROFILE) &body BODY)
 --------------------------------
 
 include::docstrings/OP_DEF-TEST.txt[]

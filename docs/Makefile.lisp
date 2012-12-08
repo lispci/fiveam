@@ -20,7 +20,7 @@
 
   (target* `(static-file ,name) ()
     (when (file-newer-p source destination)
-      (path:cp source destination))))
+      (path:cp source destination :overwrite t))))
 
 (static-file "asciidoc.css" (path:catfile *asciidoc-root* "stylesheets/" "asciidoc.css"))
 
