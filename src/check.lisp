@@ -33,10 +33,17 @@
 
 (defclass test-result ()
   ((reason :accessor reason :initarg :reason :initform "no reason given")
-   (test-case :accessor test-case :initarg :test-case)
-   (test-expr :accessor test-expr :initarg :test-expr))
+   (test-expr :accessor test-expr :initarg :test-expr)
+   (test-case :accessor test-case
+              :initarg :test-case
+              :initform (with-run-state (current-test)
+                          current-test)))
   (:documentation "All checking macros will generate an object of
 type TEST-RESULT."))
+
+(defgeneric test-result-p (object)
+  (:method ((o test-result)) t)
+  (:method ((o t)) nil))
 
 (defclass test-passed (test-result)
   ()
@@ -46,10 +53,16 @@ type TEST-RESULT."))
   (:method ((o t)) nil)
   (:method ((o test-passed)) t))
 
+;; if a condition could inhert from a class we could avoid duplicating
+;; these slot definitions...
+
 (define-condition check-failure (error)
   ((reason :accessor reason :initarg :reason :initform "no reason given")
-   (test-case :accessor test-case :initarg :test-case)
-   (test-expr :accessor test-expr :initarg :test-expr))
+   (test-expr :accessor test-expr :initarg :test-expr)
+   (test-case :accessor test-case
+              :initarg :test-case
+              :initform (with-run-state (current-test)
+                          current-test)))
   (:documentation "Signaled when a check fails.")
   (:report  (lambda (c stream)
               (format stream "The following check failed: ~S~%~A."
@@ -58,9 +71,12 @@ type TEST-RESULT."))
 
 (defmacro process-failure (&rest args)
   `(progn
-     (with-simple-restart (ignore-failure "Continue the test run.")
-       (error 'check-failure ,@args))
+     (restartable-check-failure ,@args)
      (add-result 'test-failure ,@args)))
+
+(defun restartable-check-failure (&rest check-failure-args)
+  (with-simple-restart (ignore-failure "Continue the test run.")
+    (apply #'error 'check-failure check-failure-args)))
 
 (defclass test-failure (test-result)
   ()
@@ -92,10 +108,14 @@ when appropiate."))
 (defun add-result (result-type &rest make-instance-args)
   "Create a TEST-RESULT object of type RESULT-TYPE passing it the
 initialize args MAKE-INSTANCE-ARGS and adds the resulting object to
-the list of test results."
-  (with-run-state (result-list current-test)
-    (let ((result (apply #'make-instance result-type
-                         (append make-instance-args (list :test-case current-test)))))
+the list of test results.
+
+If RESULT-TYPE is already a TEST-RESULT object it is used as is and
+the MAKE-INSTANCE-ARGS are ignored."
+  (with-run-state (result-list)
+    (let ((result (if (test-result-p result-type)
+                      result-type
+                      (apply #'make-instance result-type make-instance-args))))
       (etypecase result
         (test-passed  (format *test-dribble* "."))
         (unexpected-test-failure (format *test-dribble* "X"))
@@ -131,7 +151,7 @@ string."
   (assert (listp test)
           (test)
           "Argument to IS must be a list, not ~S" test)
-  (let (bindings effective-test default-reason-args)
+  (let (bindings effective-test failure-init-args)
     (with-gensyms (e a v)
       (flet ((process-entry (predicate expected actual &optional negatedp)
                ;; make sure EXPECTED is holding the entry that starts with 'values
@@ -160,39 +180,113 @@ string."
                                          ,@setf-forms
                                          ,(if negatedp
                                               `(not (,predicate ,e ,a))
-                                              `(,predicate ,e ,a)))))))
+                                              `(,predicate ,e ,a))))
+                 (values e a))))
         (list-match-case test
           ((not (?predicate ?expected ?actual))
-           (process-entry ?predicate ?expected ?actual t)
-           (setf default-reason-args
-                 (list "~2&~S~2% evaluated to ~2&~S~2% which is ~2&~S~2%to ~2&~S~2% (it should not be)"
-                       `',?actual a `',?predicate e)))
+           (multiple-value-bind (expected-value actual-value)
+               (process-entry ?predicate ?expected ?actual t)
+             (setf failure-init-args `('is-negated-binary-failure
+                                       :predicate ',?predicate
+                                       :expected-form ',?expected
+                                       :expected-value ,expected-value
+                                       :actual-form ',?actual
+                                       :actual-value ,actual-value))))
           ((not (?satisfies ?value))
            (setf bindings (list (list v ?value))
                  effective-test `(not (,?satisfies ,v))
-                 default-reason-args
-                 (list "~2&~S~2% evaluated to ~2&~S~2% which satisfies ~2&~S~2% (it should not)"
-                       `',?value v `',?satisfies)))
+                 failure-init-args `('is-negated-unary-failure
+                                     :predicate      ',?satisfies
+                                     :expected-form  ',?value
+                                     :expected-value ,v)))
           ((?predicate ?expected ?actual)
-           (process-entry ?predicate ?expected ?actual)
-           (setf default-reason-args
-                 (list "~2&~S~2% evaluated to ~2&~S~2% which is not ~2&~S~2% to ~2&~S~2%."
-                       `',?actual a `',?predicate e)))
+           (multiple-value-bind (expected-value actual-value)
+               (process-entry ?predicate ?expected ?actual)
+             (setf failure-init-args `('is-binary-failure
+                                       :predicate       ',?predicate
+                                       :expected-form   ',?expected
+                                       :expected-value  ,expected-value
+                                       :actual-value    ,actual-value
+                                       :actual-form     ',?actual))))
           ((?satisfies ?value)
            (setf bindings (list (list v ?value))
                  effective-test `(,?satisfies ,v)
-                 default-reason-args
-                 (list "~2&~S~2% evaluated to ~2&~S~2% which does not satisfy ~2&~S~2%"
-                       `',?value v `',?satisfies)))
+                 failure-init-args `('is-unary-failure
+                                     :predicate      ',?satisfies
+                                     :expected-form  ',?value
+                                     :expected-value ,v)))
           (?_
            (setf bindings '()
                  effective-test test
-                 default-reason-args (list "~2&~S~2% was NIL." `',test)))))
+                 failure-init-args `('test-failure
+                                     :reason (format nil "~2&~S~2% returned NIL." ',test)
+                                     :test-expr ',test)))))
+      (when reason-args
+        (setf failure-init-args (list* :result `(format nil ,@reason-args) failure-init-args)))
       `(let ,bindings
          (if ,effective-test
              (add-result 'test-passed :test-expr ',test)
-             (process-failure :reason (format nil ,@(or reason-args default-reason-args))
-                              :test-expr ',test))))))
+             (let ((failure (make-instance ,@failure-init-args)))
+               (restartable-check-failure :reason (reason failure) :test-expr ',test)
+               (add-result failure)))))))
+
+(defclass is-failure-mixin ()
+  ((predicate :initarg :predicate :accessor predicate)
+   (actual-form :initarg :actual-form :accessor actual-form)
+   (actual-value :initarg :actual-value :accessor actual-value)))
+
+(defclass is-binary-failure-mixin (is-failure-mixin)
+  ((expected-value :initarg :expected-value :accessor expected-value)
+   (expected-form  :initarg :expected-form  :accessor expected-form)))
+
+(defclass is-failure (test-failure)
+  ((reason :initform nil :initarg :reason)))
+
+(defmethod reason :around ((result is-failure))
+  (or (slot-value result 'reason)
+      (call-next-method)))
+
+(defclass is-binary-failure (is-failure is-binary-failure-mixin)
+  ())
+
+(defmethod reason ((result is-binary-failure))
+  (format nil
+          "~2&~S~2% evaluated to ~2&~S~2% which is ~2&~S~2%to ~2&~S~2% (it should not be)"
+          (actual-form result)
+          (actual-value result)
+          (predicate result)
+          (expected-value result)))
+
+(defclass is-negated-binary-failure (is-failure is-binary-failure-mixin)
+  ())
+
+(defmethod reason ((result is-binary-failure))
+  (format nil
+          "~2&~S~2% evaluated to ~2&~S~2% which is not ~2&~S~2%to ~2&~S~2% (it should be)"
+          (actual-form result)
+          (actual-value result)
+          (predicate result)
+          (expected-value result)))
+
+(defclass is-unary-failure (is-failure is-failure-mixin)
+  ())
+
+(defmethod reason ((result is-unary-failure))
+  (format nil
+          "~2&~S~2% evaluated to ~2&~S~2% which satisfies ~2&~S~2% (it should not)"
+          (actual-form result)
+          (actual-value result)
+          (predicate result)))
+
+(defclass is-negated-unary-failure (is-failure is-failure-mixin)
+  ())
+
+(defmethod reason ((result is-negated-unary-failure))
+  (format nil
+          "~2&~S~2% evaluated to ~2&~S~2% which does not satisfy ~2&~S~2%"
+          (actual-form result)
+          (actual-value result)
+          (predicate result)))
 
 ;;;; *** Other checks
 
