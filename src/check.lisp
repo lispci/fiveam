@@ -114,11 +114,17 @@ If TEST returns a true value a test-passed result is generated,
 otherwise a test-failure result is generated. The reason, unless
 REASON-ARGS is provided, is generated based on the form of TEST:
 
-\(predicate expected actual) - Means that we want to check whether,
-according to PREDICATE, the ACTUAL value is in fact what we EXPECTED.
+`(predicate expected actual)`::
 
-\(predicate value) - Means that we want to ensure that VALUE satisfies
-PREDICATE.
+Means that we want to check whether, according to PREDICATE, the
+ACTUAL value is in fact what we EXPECTED. `expected` can also be a
+values form, `(cl:values &rest values)`. In this case the values
+returned by `actual` will be converted to a list and that list will be
+compared, via `predicate` to the list `values`.
+
+`(predicate value)`::
+
+Means that we want to ensure that VALUE satisfies PREDICATE.
 
 Wrapping the TEST form in a NOT simply produces a negated reason
 string."
