@@ -57,7 +57,7 @@ type TEST-RESULT."))
 ;; these slot definitions...
 
 (define-condition check-failure (error)
-  ((reason :accessor reason :initarg :reason :initform "no reason given")
+  ((failure :accessor failure :initarg :failure)
    (test-expr :accessor test-expr :initarg :test-expr)
    (test-case :accessor test-case
               :initarg :test-case
@@ -66,17 +66,16 @@ type TEST-RESULT."))
   (:documentation "Signaled when a check fails.")
   (:report  (lambda (c stream)
               (format stream "The following check failed: ~S~%~A."
-                      (test-expr c)
-                      (reason c)))))
+                      (test-expr (failure c))
+                      (reason (failure c))))))
 
-(defmacro process-failure (&rest args)
-  `(progn
-     (restartable-check-failure ,@args)
-     (add-result 'test-failure ,@args)))
+(defun process-failure (failure-object)
+  (restartable-check-failure failure-object)
+  (add-result failure-object))
 
-(defun restartable-check-failure (&rest check-failure-args)
+(defun restartable-check-failure (failure)
   (with-simple-restart (ignore-failure "Continue the test run.")
-    (apply #'error 'check-failure check-failure-args)))
+    (error 'check-failure :failure failure)))
 
 (defclass test-failure (test-result)
   ()
@@ -127,6 +126,63 @@ the MAKE-INSTANCE-ARGS are ignored."
 
 ;;;; *** The IS check
 
+(defun parse-dwim-is-arguments (form)
+  (destructuring-bind (test &optional reason-string &rest reason-args)
+      form
+    (let ((reason-form (if reason-string
+                           `(:reason (format nil ,reason-string ,@reason-args))
+                           nil))
+          (expected-value (gensym))
+          (actual-value (gensym)))
+      (flet ((make-failure-instance (type &key predicate expected actual condition)
+               (values `(make-instance ',type
+                                       ,@reason-form
+                                       :predicate ',predicate
+                                       :test-expr ',test
+                                       ,@(when expected
+                                           `(:expected-form ',expected :expected-value ,expected-value))
+                                       ,@(when actual
+                                           `(:actual-form ',actual :actual-value ,actual-value)))
+                       (append (when expected
+                                 `((,expected-value ,expected)))
+                               (when actual
+                                 `((,actual-value ,actual))))
+                       condition)))
+        (list-match-case test
+          ((not (?predicate ?expected ?actual))
+           
+           (make-failure-instance 'is-negated-binary-failure
+                                  :predicate ?predicate
+                                  :expected ?expected
+                                  :actual ?actual
+
+                                  :condition `(not (,?predicate ,expected-value ,actual-value))))
+          
+          ((not (?predicate ?expected))
+
+           (make-failure-instance 'is-negated-unary-failure
+                                  :predicate ?predicate
+                                  :expected ?expected
+                                  :condition `(not (,?predicate ,expected-value))))
+          
+          ((?predicate ?expected ?actual)
+
+           (make-failure-instance 'is-binary-failure
+                                  :predicate ?predicate
+                                  :expected ?expected
+                                  :actual ?actual
+                                  :condition `(,?predicate ,expected-value ,actual-value)))
+          ((?predicate ?expected)
+
+           (make-failure-instance 'is-unary-failure
+                                  :predicate ?predicate
+                                  :expected ?expected
+                                  :condition `(,?predicate ,expected-value)))
+          (_
+           (values `(make-instance 'test-failure ,@reason-form)
+                   '()
+                   test)))))))
+
 (defmacro is (test &rest reason-args)
   "The DWIM checking operator.
 
@@ -137,10 +193,7 @@ REASON-ARGS is provided, is generated based on the form of TEST:
 `(predicate expected actual)`::
 
 Means that we want to check whether, according to PREDICATE, the
-ACTUAL value is in fact what we EXPECTED. `expected` can also be a
-values form, `(cl:values &rest values)`. In this case the values
-returned by `actual` will be converted to a list and that list will be
-compared, via `predicate` to the list `values`.
+ACTUAL value is in fact what we EXPECTED.
 
 `(predicate value)`::
 
@@ -151,93 +204,21 @@ string."
   (assert (listp test)
           (test)
           "Argument to IS must be a list, not ~S" test)
-  (let (bindings effective-test failure-init-args)
-    (with-gensyms (e a v)
-      (flet ((process-entry (predicate expected actual &optional negatedp)
-               ;; make sure EXPECTED is holding the entry that starts with 'values
-               (when (and (consp actual)
-                          (eq (car actual) 'values))
-                 (assert (not (and (consp expected)
-                                   (eq (car expected) 'values))) ()
-                                   "Both the expected and actual part is a values expression.")
-                 (rotatef expected actual))
-               (let ((setf-forms))
-                 (if (and (consp expected)
-                          (eq (car expected) 'values))
-                     (progn
-                       (setf expected (copy-list expected))
-                       (setf setf-forms (loop for cell = (rest expected) then (cdr cell)
-                                              for i from 0
-                                              while cell
-                                              when (eq (car cell) '*)
-                                              collect `(setf (elt ,a ,i) nil)
-                                              and do (setf (car cell) nil)))
-                       (setf bindings (list (list e `(list ,@(rest expected)))
-                                            (list a `(multiple-value-list ,actual)))))
-                     (setf bindings (list (list e expected)
-                                          (list a actual))))
-                 (setf effective-test `(progn
-                                         ,@setf-forms
-                                         ,(if negatedp
-                                              `(not (,predicate ,e ,a))
-                                              `(,predicate ,e ,a))))
-                 (values e a))))
-        (list-match-case test
-          ((not (?predicate ?expected ?actual))
-           (multiple-value-bind (expected-value actual-value)
-               (process-entry ?predicate ?expected ?actual t)
-             (setf failure-init-args `('is-negated-binary-failure
-                                       :predicate ',?predicate
-                                       :expected-form ',?expected
-                                       :expected-value ,expected-value
-                                       :actual-form ',?actual
-                                       :actual-value ,actual-value))))
-          ((not (?satisfies ?value))
-           (setf bindings (list (list v ?value))
-                 effective-test `(not (,?satisfies ,v))
-                 failure-init-args `('is-negated-unary-failure
-                                     :predicate      ',?satisfies
-                                     :expected-form  ',?value
-                                     :expected-value ,v)))
-          ((?predicate ?expected ?actual)
-           (multiple-value-bind (expected-value actual-value)
-               (process-entry ?predicate ?expected ?actual)
-             (setf failure-init-args `('is-binary-failure
-                                       :predicate       ',?predicate
-                                       :expected-form   ',?expected
-                                       :expected-value  ,expected-value
-                                       :actual-value    ,actual-value
-                                       :actual-form     ',?actual))))
-          ((?satisfies ?value)
-           (setf bindings (list (list v ?value))
-                 effective-test `(,?satisfies ,v)
-                 failure-init-args `('is-unary-failure
-                                     :predicate      ',?satisfies
-                                     :expected-form  ',?value
-                                     :expected-value ,v)))
-          (?_
-           (setf bindings '()
-                 effective-test test
-                 failure-init-args `('test-failure
-                                     :reason (format nil "~2&~S~2% returned NIL." ',test)
-                                     :test-expr ',test)))))
-      (when reason-args
-        (setf failure-init-args (list* :result `(format nil ,@reason-args) failure-init-args)))
-      `(let ,bindings
-         (if ,effective-test
-             (add-result 'test-passed :test-expr ',test)
-             (let ((failure (make-instance ,@failure-init-args)))
-               (restartable-check-failure :reason (reason failure) :test-expr ',test)
-               (add-result failure)))))))
+  (multiple-value-bind (make-failure-form bindings predicate)
+      (parse-dwim-is-arguments (list* test reason-args))
+    `(let ,bindings
+       (if ,predicate
+           (add-result 'test-passed :test-expr ',test)
+           (process-failure ,make-failure-form)))))
 
 (defclass is-failure-mixin ()
   ((predicate :initarg :predicate :accessor predicate)
-   (actual-form :initarg :actual-form :accessor actual-form)
-   (actual-value :initarg :actual-value :accessor actual-value)))
+   (expected-value :initarg :expected-value :accessor expected-value)
+   (expected-form  :initarg :expected-form  :accessor expected-form)))
 
 (defclass is-binary-failure-mixin (is-failure-mixin)
-  ((expected-value :initarg :expected-value :accessor expected-value)
-   (expected-form  :initarg :expected-form  :accessor expected-form)))
+  ((actual-form :initarg :actual-form :accessor actual-form)
+   (actual-value :initarg :actual-value :accessor actual-value)))
 
 (defclass is-failure (test-failure)
   ((reason :initform nil :initarg :reason)))
@@ -274,8 +255,8 @@ string."
 (defmethod reason ((result is-unary-failure))
   (format nil
           "~2&~S~2% evaluated to ~2&~S~2% which satisfies ~2&~S~2% (it should not)"
-          (actual-form result)
-          (actual-value result)
+          (expected-form result)
+          (expected-value result)
           (predicate result)))
 
 (defclass is-negated-unary-failure (is-failure is-failure-mixin)
@@ -284,8 +265,8 @@ string."
 (defmethod reason ((result is-negated-unary-failure))
   (format nil
           "~2&~S~2% evaluated to ~2&~S~2% which does not satisfy ~2&~S~2%"
-          (actual-form result)
-          (actual-value result)
+          (expected-form result)
+          (expected-value result)
           (predicate result)))
 
 ;;;; *** Other checks
@@ -316,10 +297,11 @@ element is a value to pass to predicate (the 1 argument form of `IS`)"
   `(if ,condition
        (add-result 'test-passed :test-expr ',condition)
        (process-failure
-        :reason ,(if reason-args
-                     `(format nil ,@reason-args)
-                     `(format nil "~S did not return a true value" ',condition))
-        :test-expr ',condition)))
+        (make-instance 'test-failure
+                       :reason ,(if reason-args
+                                    `(format nil ,@reason-args)
+                                    `(format nil "~S did not return a true value" ',condition))
+                       :test-expr ',condition))))
 
 (defmacro is-false (condition &rest reason-args)
   "Generates a pass if CONDITION returns false, generates a
@@ -331,10 +313,11 @@ element is a value to pass to predicate (the 1 argument form of `IS`)"
     `(let ((,value ,condition))
        (if ,value
            (process-failure
-            :reason ,(if reason-args
-                         `(format nil ,@reason-args)
-                         `(format nil "~S returned the value ~S, which is true" ',condition ,value ))
-            :test-expr ',condition)
+            (make-instance 'test-failure
+                           :reason ,(if reason-args
+                                        `(format nil ,@reason-args)
+                                        `(format nil "~S returned the value ~S, which is true" ',condition ,value ))
+                           :test-expr ',condition))
            (add-result 'test-passed :test-expr ',condition)))))
 
 (defmacro signals (condition-spec
@@ -355,10 +338,11 @@ is not evaluated."
            (block nil
              ,@body))
          (process-failure
-          :reason ,(if reason-control
-                       `(format nil ,reason-control ,@reason-args)
-                       `(format nil "Failed to signal a ~S" ',condition))
-          :test-expr ',condition)
+          (make-instance 'test-failure
+                         :reason ,(if reason-control
+                                      `(format nil ,reason-control ,@reason-args)
+                                      `(format nil "Failed to signal a ~S" ',condition))
+                         :test-expr ',condition))
          (return-from ,block-name nil)))))
 
 (defmacro finishes (&body body)
@@ -374,8 +358,9 @@ return-froms or throws this test fails."
        (if ok
            (add-result 'test-passed :test-expr ',body)
            (process-failure
-            :reason (format nil "Test didn't finish")
-            :test-expr ',body)))))
+            (make-instance 'test-failure
+                           :reason (format nil "Test didn't finish")
+                           :test-expr ',body))))))
 
 (defmacro pass (&rest message-args)
   "Generate a PASS."
@@ -387,9 +372,10 @@ return-froms or throws this test fails."
 (defmacro fail (&rest message-args)
   "Generate a FAIL."
   `(process-failure
-    :test-expr ',message-args
-    ,@(when message-args
-            `(:reason (format nil ,@message-args)))))
+    (make-instance 'test-failure
+                   :test-expr ',message-args
+                   ,@(when message-args
+                       `(:reason (format nil ,@message-args))))))
 
 (defmacro skip (&rest message-args)
   "Generates a SKIP result."
