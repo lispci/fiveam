@@ -18,7 +18,6 @@ Fall/Winter 2012
 | (xref:OP_IS[`is`] (`PREDICATE` `EXPECTED` `ACTUAL`)) | check that, according to `PREDICATE` our `ACTUAL` is the same as our `EXPECTED`
 | (xref:OP_IS[`is-true`] VALUE) | check that a value is non-NIL
 | (xref:OP_RUN![`run!`] TEST-NAME) | run one (or more) tests and print the results
-| (xref:OP_RUN![`!`]) | rerun the most recently run test.
 |================================
 
 See the xref:API_REFERENCE[api] for details.
@@ -53,7 +52,7 @@ Did 2 checks.
 Lather, rinse, repeat:
 
 --------------------------------
-CL-USER> (!)
+CL-USER> (run!)
 ..
 Did 2 checks.
   Pass: 2 (100%)
@@ -355,19 +354,6 @@ If you want to run a specific test:
 Where `TEST-NAME` is either a test object (as returned by `get-test`)
 or a symbol naming a single test or a test suite.
 
-=== Re-running Tests ===
-
-The `run!` function stores its arguments in a set of variables and,
-via the functions `!`, `!!` and `!!!` will rerun those named
-tests. Note that we're deliberatly talking about names, and not test
-objects, `!` will take the last argument passed to `run!` and call
-`run!` with that again, looking up the test again if the argument was
-a symbol.
-
-This ensures that `!` will always run the current definition of a
-test, even if the test has been redefined since the last time `run!`
-was called.
-
 === Running Tests at Test Definition Time ===
 
 Often enough, especially when fixing regression bugs, we'll always
@@ -376,12 +362,6 @@ set the variable `*run-test-when-defined*` to T and after compiling a
 def-test form we'll call `run!` on the name of the test. For obvious
 reasons you have to set this variable manually after having loaded
 your test suite.
-
-[NOTE]
-Setting `*run-test-when-defined*` will cause `run!` to get called far
-more often than normal. `!` and `!!` and `!!!` don't know that they're
-getting called semi-automatically and will therefore tend to all
-reduce to the same test (which still isn't totally useless behaviour).
 
 === Debugging failures and errors ===
 
@@ -661,32 +641,6 @@ include::docstrings/OP_DEBUG-EPOINT-.txt[]
 ----
 
 include::docstrings/OP_RUN.txt[]
-================================
-
-=== ! / !! / !!! ===
-
-================================
-----
-(!)
-----
-
-include::docstrings/OP_-EPOINT-.txt[]
-================================
-
-================================
-----
-(!!)
-----
-
-include::docstrings/OP_-EPOINT--EPOINT-.txt[]
-================================
-
-================================
-----
-(!!!)
-----
-
-include::docstrings/OP_-EPOINT--EPOINT--EPOINT-.txt[]
 ================================
 
 [[OP_DEF-FIXTURE]]
