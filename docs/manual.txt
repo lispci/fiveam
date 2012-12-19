@@ -403,9 +403,36 @@ yourself:
 
 == Random Testing (QuickCheck) ==
 
-TODO.
+Sometimes it's hard to come up with edge cases for tests, or sometimes
+there are so many that it's hard to list them all one by one. Random
+testing is a way to tell the test suite how to generate input and how
+to test that certain conditions always hold. One issue when writing
+random tests is that you can't, usually, test for specific results,
+you have to test that certain relationships hold. 
 
-Every FiveAM test can be a random test, just use the for-all macro.
+For example, if we had a function which reverses a list, we could
+define a relationship like this:
+
+--------------------------------
+(equalp the-list (reverse (reverse the-list)))
+--------------------------------
+
+or
+
+--------------------------------
+(equalp (length the-list) (length (reverse the-list)))
+--------------------------------
+
+Random tests are defined via `def-test`, but the random part is then
+wrapped in a xref:OP_FOR-ALL[`for-all`] macro which runs its body
+`*num-trials*` times with different inputs:
+
+--------------------------------
+(for-all ((the-list (gen-list :length (gen-integer :min 0 :max 37)
+                              :elements (gen-integer :min -10 :max 10))))
+  (is (equalp a (reverse (reverse the-list))))
+  (is (= (length the-list) (length (reverse the-list)))))
+--------------------------------
 
 == Fixtures ==
 
