@@ -280,7 +280,8 @@
 (def-test add-remove-test-from-suite ()
   (let ((*test* (make-hash-table :test 'eql))
         (*suites* (make-hash-table :test 'eql)))
-    (in-suite* empty :in nil)
+    (def-suite empty :in nil)
+    (in-suite empty)
     (is (null (get-test 'foo)))
 
     (def-test foo (:suite nil) t)

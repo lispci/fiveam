@@ -275,11 +275,6 @@ putting all your tests into the `T` suite.
 
 === Creating Suites ===
 
-Suites are created in one of two ways: Either explicitly via the
-xref:OP_DEF-SUITE[`def-suite`] macro, or implicity via the
-xref:OP_DEF-SUITE-STAR-[`def-suite*`] and/or
-xref:OP_IN-SUITE-STAR-[`in-suite*`] macros:
-
 Suites, very much like tests, have a name (which is globally unique)
 which can be used to retrieve the suite (so that you can run it), and,
 most of the time, suites are part of a suite (the exception being the
@@ -293,7 +288,9 @@ is a sub suite of `:my-project` and set the current suite to
 --------------------------------
 (def-suite :my-project)
 
-(in-suite* :my-db-layer :in :my-project)
+(def-suite :my-db-layer :in :my-project)
+
+(in-suite :my-db-layer)
 --------------------------------
 
 [[THE_CURRENT_SUITE]]
@@ -301,10 +298,8 @@ is a sub suite of `:my-project` and set the current suite to
 
 FiveAM also has the concept of a current suite and everytime a test is
 created it adds itself to the current suite's set of tests. The
-`IN-SUITE` and `IN-SUITE*` macros, in a similar fashion to
-`IN-PACKAGE`, change the current suite.
-
-Unless changed via `IN-SUITE` and `IN-SUITE*` the current suite is the
+`IN-SUITE` macro, in a similar fashion to `IN-PACKAGE`, changes the
+current suite. Unless changed via `IN-SUITE` the current suite is the
 `T` suite.
 
 Having a default current suite allows developers to ignore suites
@@ -503,7 +498,7 @@ include::docstrings/OP_DEF-SUITE.txt[]
 
 [[OP_IN-SUITE]]
 [[OP_IN-SUITE-STAR-]]
-=== IN-SUITE / IN-SUITE* ===
+=== IN-SUITE ===
 
 ================================
 ----
@@ -511,14 +506,6 @@ include::docstrings/OP_DEF-SUITE.txt[]
 ----
 
 include::docstrings/OP_IN-SUITE.txt[]
-================================
-
-================================
-----
-(in-suite* NAME &key IN)
-----
-
-include::docstrings/OP_IN-SUITE-STAR-.txt[]
 ================================
 
 [[OP_IS]]
