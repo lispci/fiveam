@@ -57,8 +57,6 @@ depending on another.
 FIXTURE specifies a fixture to wrap the body in.
 
 If PROFILE is T profiling information will be collected as well."
-  (simple-style-warning "~A is OBSOLETE! Use ~A instead."
-                        'test 'def-test)
   (destructuring-bind (name &rest args)
       (ensure-list name)
     `(def-test ,name (,@args) ,@body)))
