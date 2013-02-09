@@ -30,8 +30,8 @@
 ;;;;   on this one (even if the dependency is not circular) will be
 ;;;;   skipped.
 
-;;;; The functions RUN!, !, !! and !!! are convenient wrappers around
-;;;; RUN and EXPLAIN.
+;;;; The functions RUN! is a convenient wrapper around RUN and
+;;;; EXPLAIN.
 
 (defparameter *debug-on-error* nil
   "T if we should drop into a debugger on error, NIL otherwise.")
@@ -264,18 +264,6 @@ TEST-SPEC can be either a symbol naming a test or test suite, or
 a testable-object object. This function changes the operations
 performed by the !, !! and !!! functions."
   (run-and-bind-result-list (lambda () (%run test-spec))))
-
-(defun ! ()
-  "Rerun the most recently run test and explain the results."
-  (explain! (funcall *!*)))
-
-(defun !! ()
-  "Rerun the second most recently run test and explain the results."
-  (explain! (funcall *!!*)))
-
-(defun !!! ()
-  "Rerun the third most recently run test and explain the results."
-  (explain! (funcall *!!!*)))
 
 (defun run-all-tests ()
   "Run all tests in arbitrary order."

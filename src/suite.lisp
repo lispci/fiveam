@@ -46,11 +46,6 @@ will overrwrite any existing suite named `NAME`."
                  ,@(when fixture-p `(:fixture ',fixture)))
      ',name))
 
-(defmacro def-suite* (name &rest def-suite-args)
-  `(progn
-     (def-suite ,name ,@def-suite-args)
-     (in-suite ,name)))
-
 (defun remove-from-suites (test-name)
   (when (get-test test-name)
     ;; if this suite alruady exists, and its :IN some other suite, remove it.
@@ -96,28 +91,16 @@ See also: `DEF-SUITE` and `*SUITE*`. "
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (%in-suite ,suite-name)))
 
-(defmacro in-suite* (suite-name &rest def-suite-args)
-  "Same effect as `IN-SUITE`, but if `SUITE-NAME` does not exist it
-will be created (as per `DEF-SUITE`)"
-  `(%in-suite ,suite-name
-              :fail-on-error nil
-              ,@def-suite-args))
-
-(defmacro %in-suite (suite-name &rest def-suite-args &key fail-on-error &allow-other-keys)
-  (declare (ignore fail-on-error))
+(defmacro %in-suite (suite-name &rest def-suite-args)
   (with-gensyms (suite)
-    (let ((fail-on-error (getf def-suite-args :fail-on-error t)))
-      (remf def-suite-args :fail-on-error)
-      `(progn
-         (if-let (,suite (get-test ',suite-name))
-           (setf *suite* ,suite)
-           (progn
-             (when ,fail-on-error
-               (cerror "Create a new suite named ~A."
-                       "Unknown suite ~A." ',suite-name))
-             (setf (get-test ',suite-name) (make-suite ',suite-name ,@def-suite-args)
-                   *suite* (get-test ',suite-name))))
-         ',suite-name))))
+    `(progn
+       (if-let (,suite (get-test ',suite-name))
+         (setf *suite* ,suite)
+         (progn
+           (cerror "Create a new suite named ~A." "Unknown suite ~A." ',suite-name)
+           (setf (get-test ',suite-name) (make-suite ',suite-name ,@def-suite-args)
+                 *suite* (get-test ',suite-name))))
+       ',suite-name)))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved.

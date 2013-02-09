@@ -18,7 +18,6 @@ Fall/Winter 2012
 | (xref:OP_IS[`is`] (`PREDICATE` `EXPECTED` `ACTUAL`)) | check that, according to `PREDICATE` our `ACTUAL` is the same as our `EXPECTED`
 | (xref:OP_IS[`is-true`] VALUE) | check that a value is non-NIL
 | (xref:OP_RUN![`run!`] TEST-NAME) | run one (or more) tests and print the results
-| (xref:OP_RUN![`!`]) | rerun the most recently run test.
 |================================
 
 See the xref:API_REFERENCE[api] for details.
@@ -53,7 +52,7 @@ Did 2 checks.
 Lather, rinse, repeat:
 
 --------------------------------
-CL-USER> (!)
+CL-USER> (run!)
 ..
 Did 2 checks.
   Pass: 2 (100%)
@@ -276,11 +275,6 @@ putting all your tests into the `T` suite.
 
 === Creating Suites ===
 
-Suites are created in one of two ways: Either explicitly via the
-xref:OP_DEF-SUITE[`def-suite`] macro, or implicity via the
-xref:OP_DEF-SUITE-STAR-[`def-suite*`] and/or
-xref:OP_IN-SUITE-STAR-[`in-suite*`] macros:
-
 Suites, very much like tests, have a name (which is globally unique)
 which can be used to retrieve the suite (so that you can run it), and,
 most of the time, suites are part of a suite (the exception being the
@@ -294,7 +288,9 @@ is a sub suite of `:my-project` and set the current suite to
 --------------------------------
 (def-suite :my-project)
 
-(in-suite* :my-db-layer :in :my-project)
+(def-suite :my-db-layer :in :my-project)
+
+(in-suite :my-db-layer)
 --------------------------------
 
 [[THE_CURRENT_SUITE]]
@@ -302,10 +298,8 @@ is a sub suite of `:my-project` and set the current suite to
 
 FiveAM also has the concept of a current suite and everytime a test is
 created it adds itself to the current suite's set of tests. The
-`IN-SUITE` and `IN-SUITE*` macros, in a similar fashion to
-`IN-PACKAGE`, change the current suite.
-
-Unless changed via `IN-SUITE` and `IN-SUITE*` the current suite is the
+`IN-SUITE` macro, in a similar fashion to `IN-PACKAGE`, changes the
+current suite. Unless changed via `IN-SUITE` the current suite is the
 `T` suite.
 
 Having a default current suite allows developers to ignore suites
@@ -355,19 +349,6 @@ If you want to run a specific test:
 Where `TEST-NAME` is either a test object (as returned by `get-test`)
 or a symbol naming a single test or a test suite.
 
-=== Re-running Tests ===
-
-The `run!` function stores its arguments in a set of variables and,
-via the functions `!`, `!!` and `!!!` will rerun those named
-tests. Note that we're deliberatly talking about names, and not test
-objects, `!` will take the last argument passed to `run!` and call
-`run!` with that again, looking up the test again if the argument was
-a symbol.
-
-This ensures that `!` will always run the current definition of a
-test, even if the test has been redefined since the last time `run!`
-was called.
-
 === Running Tests at Test Definition Time ===
 
 Often enough, especially when fixing regression bugs, we'll always
@@ -376,12 +357,6 @@ set the variable `*run-test-when-defined*` to T and after compiling a
 def-test form we'll call `run!` on the name of the test. For obvious
 reasons you have to set this variable manually after having loaded
 your test suite.
-
-[NOTE]
-Setting `*run-test-when-defined*` will cause `run!` to get called far
-more often than normal. `!` and `!!` and `!!!` don't know that they're
-getting called semi-automatically and will therefore tend to all
-reduce to the same test (which still isn't totally useless behaviour).
 
 === Debugging failures and errors ===
 
@@ -423,9 +398,36 @@ yourself:
 
 == Random Testing (QuickCheck) ==
 
-TODO.
+Sometimes it's hard to come up with edge cases for tests, or sometimes
+there are so many that it's hard to list them all one by one. Random
+testing is a way to tell the test suite how to generate input and how
+to test that certain conditions always hold. One issue when writing
+random tests is that you can't, usually, test for specific results,
+you have to test that certain relationships hold. 
 
-Every FiveAM test can be a random test, just use the for-all macro.
+For example, if we had a function which reverses a list, we could
+define a relationship like this:
+
+--------------------------------
+(equalp the-list (reverse (reverse the-list)))
+--------------------------------
+
+or
+
+--------------------------------
+(equalp (length the-list) (length (reverse the-list)))
+--------------------------------
+
+Random tests are defined via `def-test`, but the random part is then
+wrapped in a xref:OP_FOR-ALL[`for-all`] macro which runs its body
+`*num-trials*` times with different inputs:
+
+--------------------------------
+(for-all ((the-list (gen-list :length (gen-integer :min 0 :max 37)
+                              :elements (gen-integer :min -10 :max 10))))
+  (is (equalp a (reverse (reverse the-list))))
+  (is (= (length the-list) (length (reverse the-list)))))
+--------------------------------
 
 == Fixtures ==
 
@@ -496,7 +498,7 @@ include::docstrings/OP_DEF-SUITE.txt[]
 
 [[OP_IN-SUITE]]
 [[OP_IN-SUITE-STAR-]]
-=== IN-SUITE / IN-SUITE* ===
+=== IN-SUITE ===
 
 ================================
 ----
@@ -504,14 +506,6 @@ include::docstrings/OP_DEF-SUITE.txt[]
 ----
 
 include::docstrings/OP_IN-SUITE.txt[]
-================================
-
-================================
-----
-(in-suite* NAME &key IN)
-----
-
-include::docstrings/OP_IN-SUITE-STAR-.txt[]
 ================================
 
 [[OP_IS]]
@@ -661,32 +655,6 @@ include::docstrings/OP_DEBUG-EPOINT-.txt[]
 ----
 
 include::docstrings/OP_RUN.txt[]
-================================
-
-=== ! / !! / !!! ===
-
-================================
-----
-(!)
-----
-
-include::docstrings/OP_-EPOINT-.txt[]
-================================
-
-================================
-----
-(!!)
-----
-
-include::docstrings/OP_-EPOINT--EPOINT-.txt[]
-================================
-
-================================
-----
-(!!!)
-----
-
-include::docstrings/OP_-EPOINT--EPOINT--EPOINT-.txt[]
 ================================
 
 [[OP_DEF-FIXTURE]]
