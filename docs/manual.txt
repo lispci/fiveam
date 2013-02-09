@@ -335,10 +335,10 @@ that name tests or suites) and returns a list of test results (one
 element for each check that was executed). The output of `run` is,
 generally, passed to the `explain` function which, given an explainer
 object, produces some human readable text describing the test
-failures. The 99% of the time a human will be using 5am (as opposed to
-a continuous integration bot) they'll want to run the tests and
-immediately see the results with detailed failure info, this can be
-done in one step via: `run!` (see the first example).
+failures. The 99% of the time that a human will be using 5am (as
+opposed to a continuous integration bot) they'll want to run the tests
+and immediately see the results with detailed failure info, this can
+be done in one step via: `run!` (see the first example).
 
 If you want to run a specific test:
 
@@ -366,7 +366,7 @@ Normally fiveam will simply capture unexpected errors, record them as
 failures, and move on to the next test (any following checks in the
 test body will not be run). However sometimes, well, all the time
 unless you're running an automated regression test, it's better to not
-capture the error but open up a debugger, set `*debug-on-error*` to
+capture the error but open up a debugger; set `*debug-on-error*` to
 `T` to get this effect.
 
 `*debug-on-failure*`::
@@ -398,36 +398,99 @@ yourself:
 
 == Random Testing (QuickCheck) ==
 
-Sometimes it's hard to come up with edge cases for tests, or sometimes
-there are so many that it's hard to list them all one by one. Random
-testing is a way to tell the test suite how to generate input and how
-to test that certain conditions always hold. One issue when writing
-random tests is that you can't, usually, test for specific results,
-you have to test that certain relationships hold. 
+One common problem when writing tests is determining what data to test
+with. We often know the kids of values we'll generally be passing to a
+function, and that usually leads us to some edge cases (empty lists,
+zeros, etc.) however it is often very hard to guess, ahead of time,
+all the different values we'll be passing to our code and it's
+especially hard to know kinds of values we haven't forseen.
 
-For example, if we had a function which reverses a list, we could
-define a relationship like this:
+Quickcheck-ing is one way to find edge cases we hadn't thought
+about. When quickcheck-ing we don't have a list of inputs and outputs,
+we just have a class of values (generated randomly at run time) and a
+property of our code that we know should always hold.
+
+For example, if we had a function which reverses a list, we'll
+probably start with some sample data, either copies of the actual data
+we want to sort, or whatever comes to mind while implementing the
+function itself. But can we trust our selves to forsee all the
+different data we're going to sort? Probably not, but we do know some
+things about this function which, no matter what the input is, must
+always be true. For example, given a list sorting function, we know
+that:
 
 --------------------------------
 (equalp the-list (reverse (reverse the-list)))
 --------------------------------
 
-or
+and
 
 --------------------------------
 (equalp (length the-list) (length (reverse the-list)))
 --------------------------------
 
-Random tests are defined via `def-test`, but the random part is then
-wrapped in a xref:OP_FOR-ALL[`for-all`] macro which runs its body
-`*num-trials*` times with different inputs:
+and 
+
+--------------------------------
+(equalp the-list (intersection the-list (reverse the-list)))
+--------------------------------
+
+Given these three conditions we can ask five am to generate random
+lists and test that, for whatever inputs, these conditions hold:
 
 --------------------------------
 (for-all ((the-list (gen-list :length (gen-integer :min 0 :max 37)
                               :elements (gen-integer :min -10 :max 10))))
   (is (equalp a (reverse (reverse the-list))))
-  (is (= (length the-list) (length (reverse the-list)))))
+  (is (= (length the-list) (length (reverse the-list))))
+  (is (equalp the-list (intersection the-list (reverse the-list)))))
 --------------------------------
+
+The xref:OP_FOR-ALL[`for-all`] macro is the main driver behind
+fiveam's random testing functionality. It will execute its body a
+certian number of time (`*num-trials*` times) generating new data each
+time.
+
+The generators themselves are functions, usually lambdas, which, when
+called, produce a fresh datum. The standard generators included in
+fivame have been written in a way that's its easy to combine them. For
+examples the gen-list function, which returns a list generator, takes
+as its :length parameter and integer generator, which is what the
+gen-integer function returns.
+
+Sometime though it's not enough to generate values independantly,
+sometimes we want, for example, two numbers where one is less than the
+other. Let's say we were testing a simple max function, we could start
+out with this:
+
+--------------------------------
+(for-all ((a (gen-integer))
+          (b (gen-integer)))
+  (is-true (if (= a (max a b))
+               (<= a b)
+               (<= b a))))
+--------------------------------
+
+Which works, but it might be cleaner to generate two randowm numbers
+and require that one be less than the other:
+
+--------------------------------
+(for-all ((a (gen-integer))
+          (b (gen-integer) (<= a b)))
+  (is (= b (max a b))))
+--------------------------------
+
+We've added a guard condition to the values of B requiring that they
+be `<=` the values o A. `for-all` will call simply keep trying to
+produce random values of A and B until this condition is meet, and
+only when it is will the body be run. 
+
+[NOTE]
+Since this could loop an arbitrary number of times, especially if the
+guard condition is impossible to meet, the variable `*max-trials*`
+determins the maximum number of times for-all will try to run its
+body, unless the*num-trials* limit is hit first. By default
+*max-trials* is 100 times greater than *num-trials*.
 
 == Fixtures ==
 
