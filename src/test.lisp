@@ -40,8 +40,7 @@ named KEY in the *TEST* hash table."
         collect test))
 
 (defmacro test (name &body body)
-  "Deprecated. See DEF-TEST."
-  (simple-style-warning "~A is OBSOLETE! Use ~A instead." 'test 'def-test)
+  "Alias for DEF-TEST."
   (destructuring-bind (name &rest args)
       (ensure-list name)
     `(def-test ,name (,@args) ,@body)))
