@@ -37,7 +37,7 @@ FIXTURE::
   tests defined in this suite.
 
 [NOTE]
-This macro is built on top of `make-suite` as such it, like `make-suite`,
+This macro is built on top of `make-suite` and  it, just like `make-suite`,
 will overrwrite any existing suite named `NAME`."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (make-suite ',name
@@ -75,7 +75,7 @@ Overrides any existing suite named NAME."
 
 (defun list-all-suites ()
   (loop for suite being the hash-value in *suites*
-       collect suite))
+        collect suite))
 
 ;;;; ** Managing the Current Suite
 

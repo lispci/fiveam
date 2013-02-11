@@ -151,7 +151,6 @@
   (signals circular-dependency
     (run 'circular-2)))
 
-
 (def-suite before-test-suite :description "Suite for before test" :in nil)
 
 (def-test before-0 (:suite before-test-suite)
@@ -176,7 +175,6 @@
   
   (with-test-results (results before-test-suite-2)
     (is (every #'test-passed-p results))))
-
 
 ;;;; dependencies with symbol
 (def-test dep-with-symbol-first (:suite test-suite)
