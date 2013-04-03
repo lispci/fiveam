@@ -27,7 +27,6 @@
    #:make-suite
    #:def-suite
    #:in-suite
-   #:in-suite*
    #:make-test
    #:test
    #:def-test
