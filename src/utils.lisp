@@ -92,7 +92,10 @@ ELSE will be executed."
                  (acond2 ,@others)))))))
 
 (defun varsymp (x)
-  (and (symbolp x) (eq (aref (symbol-name x) 0) #\?)))
+  (and (symbolp x)
+       (let ((symbol-name (symbol-name x)))
+         (and (not (emptyp symbol-name))
+              (char= (char symbol-name 0) #\?)))))
 
 (defun binding (x binds)
   (labels ((recbind (x binds)
