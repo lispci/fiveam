@@ -89,6 +89,14 @@ run."))
          (setf (status test) :circular))))
     (t (status test))))
 
+(defun note-failed-to-compile-test (outer-name)
+  (with-run-state (current-test result-list)
+    (add-result 'test-failure
+                :test-expr nil
+                :test-case current-test
+                :reason (format nil "~A failed to update ~A of ~S"
+                                'compile 'fdefinition outer-name))))
+
 (defgeneric resolve-dependencies (depends-on))
 
 (defmethod resolve-dependencies ((depends-on symbol))

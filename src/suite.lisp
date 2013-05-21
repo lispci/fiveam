@@ -23,11 +23,15 @@ IN (a symbol), if provided, causes this suite te be nested in the
 suite named by IN. NB: This macro is built on top of make-suite,
 as such it, like make-suite, will overrwrite any existing suite
 named NAME."
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (make-suite ',name
-                 ,@(when description `(:description ,description))
-                 ,@(when in `(:in ',in)))
-     ',name))
+  (let ((outer-name (generate-test-defun-name name))) 
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (progn 
+         (make-suite ',name
+                     ,@(when description `(:description ,description))
+                     ,@(when in `(:in ',in)))
+         (defun ,outer-name ()
+           (run! ',name))
+         ',name))))
 
 (defmacro def-suite* (name &rest def-suite-args)
   `(progn

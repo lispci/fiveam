@@ -62,7 +62,7 @@ If PROFILE is T profiling information will be collected as well."
     `(def-test ,name (,@args) ,@body)))
 
 (defmacro def-test (name (&key depends-on (suite '*suite* suite-p) fixture
-                            (compile-at :run-time) profile)
+                               (compile-at :run-time) profile)
                     &body body)
   "Create a test named NAME.
 
@@ -100,35 +100,59 @@ If PROFILE is T profiling information will be collected as well."
                                (destructuring-bind (name &rest args)
                                    (ensure-list fixture)
                                  `((with-fixture ,name ,args ,@body-forms)))
-                               body-forms)))
+                               body-forms))
+           (outer-name (generate-test-defun-name name))
+           (dfun 
+             ;; TODO allow customizing name format in def-suite, with inheritence
+             (with-gensyms (fun save new) 
+               (if (eq compile-at :definition-time)
+                   `(progn
+                      (defun ,outer-name ()
+                        (let ((,fun (lambda () ,@effective-body))) 
+                          (if (boundp 'current-test) (funcall ,fun)
+                              (run! ',name)))))
+                   ;; :run-time
+                   `(progn
+                      (defun ,outer-name ()
+                        ;; These contortions are in order for M-. on
+                        ;; outer-name to still find the definition,
+                        ;; despite it being redefined at run-time
+                        (let* ((,save (fdefinition ',outer-name))
+                               (,new 
+                                 (unwind-protect 
+                                      (progn
+                                        (compile ',outer-name
+                                                 '(lambda () ,@effective-body))
+                                        (fdefinition ',outer-name))
+                                   (setf (fdefinition ',outer-name) ,save))))
+                          (if (boundp 'current-test)
+                              ;; In case (compile) fails and somehow we continue
+                              (if (eq ,new ,save)
+                                  (note-failed-to-compile-test ',outer-name)
+                                  (funcall ,new))
+                              (run! ',name)))))))))
       `(progn
-         (register-test ',name ,description ',effective-body ,suite-form ',depends-on ,compile-at ,profile)
+         ,dfun
+         (register-test ',name ,description ',outer-name ,suite-form ',depends-on ,profile)
          (when *run-test-when-defined*
            (run! ',name))
          ',name))))
 
-(defun register-test (name description body suite depends-on compile-at profile)
-  (let ((lambda-name
-          (format-symbol t "%~A-~A" '#:test name))
-        (inner-lambda-name
-          (format-symbol t "%~A-~A" '#:inner-test name)))
-    (setf (get-test name)
-          (make-instance 'test-case
-                         :name name
-                         :runtime-package (find-package (package-name *package*))
-                         :test-lambda
-                         (eval
-                          `(named-lambda ,lambda-name ()
-                             ,@(ecase compile-at
-                                 (:run-time `((funcall
-                                               (let ((*package* (find-package ',(package-name *package*))))
-                                                 (compile ',inner-lambda-name
-                                                          '(lambda () ,@body))))))
-                                 (:definition-time body))))
-                         :description description
-                         :depends-on depends-on
-                         :collect-profiling-info profile))
-    (setf (gethash name (tests suite)) name)))
+
+(defun generate-test-defun-name (name)
+  "Return the name for the DEFUN used to call the test NAME"
+  (format-symbol t "%~A-~A" '#:test name))
+
+(defun register-test (name description outer-name suite depends-on profile)
+  (setf (get-test name)
+        (make-instance 'test-case
+         :name name
+         :runtime-package (find-package (package-name *package*))
+         :test-lambda outer-name
+         :description description
+         :depends-on depends-on
+         :collect-profiling-info profile))
+  (setf (gethash name (tests suite)) name) (setf (gethash name (tests suite)) name))
 
 (defvar *run-test-when-defined* nil
   "When non-NIL tests are run as soon as they are defined.")
