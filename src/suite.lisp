@@ -48,7 +48,7 @@ will overrwrite any existing suite named `NAME`."
 
 (defun remove-from-suites (test-name)
   (when (get-test test-name)
-    ;; if this suite alruady exists, and its :IN some other suite, remove it.
+    ;; if this suite already exists, and it's :IN some other suite, remove it.
     (dolist (s (list-all-suites))
       (when (gethash test-name (tests s))
         (remhash test-name (tests s))))))
@@ -74,8 +74,8 @@ Overrides any existing suite named NAME."
     suite))
 
 (defun list-all-suites ()
-  (loop for suite being the hash-value in *suites*
-        collect suite))
+  "Returns an unordered LIST of all suites."
+  (hash-table-values *suites*))
 
 ;;;; ** Managing the Current Suite
 
