@@ -6,6 +6,8 @@
                                                  (or *compile-file-pathname*
                                                      *load-truename*)))
                (read f))
+  :description "A simple regression testing framework"
+  :license "BSD"
   :depends-on (:alexandria)
   :pathname "src/"
   :components ((:file "package")
@@ -25,6 +27,8 @@
 
 (defsystem :fiveam-test
   :author "Edward Marco Baringer <mb@bese.it>"
+  :description "FiveAM's own test suite"
+  :license "BSD"
   :depends-on (:fiveam)
   :pathname "t/"
   :components ((:file "suite")
