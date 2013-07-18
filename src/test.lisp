@@ -11,6 +11,9 @@
 ;;;; collection of checks which can be run and a test suite is a named
 ;;;; collection of tests and test suites.
 
+(defvar *suite* nil
+  "The current test suite object")
+
 (defvar *test*
   (make-hash-table :test 'eql)
   "Lookup table mapping test (and test suite)
