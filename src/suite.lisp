@@ -52,6 +52,10 @@ Overrides any existing suite named NAME."
     (setf (get-test name) suite)
     suite))
 
+(defun list-all-suites ()
+  "Returns an unordered LIST of all suites."
+  (hash-table-values *suites*))
+
 ;;;; ** Managing the Current Suite
 
 (defvar *suite* (setf (get-test 'NIL)
