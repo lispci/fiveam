@@ -39,6 +39,9 @@
 (defparameter *debug-on-failure* nil
   "T if we should drop into a debugger on a failing check, NIL otherwise.")
 
+(defparameter *print-progress* t
+  "T if we should print test running progress, NIL otherwise.")
+
 (defun import-testing-symbols (package-designator)
   (import '(5am::is 5am::is-true 5am::is-false 5am::signals 5am::finishes)
           package-designator))
@@ -184,12 +187,16 @@ run."))
   !!, !!!"))
 
 (defmethod %run ((test test-case))
+  (when *print-progress*
+    (format t "~% Running test ~a " (name test)))
   (run-resolving-dependencies test))
 
 (defmethod %run ((tests list))
   (mapc #'%run tests))
 
 (defmethod %run ((suite test-suite))
+  (when *print-progress*
+    (format t "~%Running test suite ~a" (name suite)))
   (let ((suite-results '()))
     (flet ((run-tests ()
              (loop
