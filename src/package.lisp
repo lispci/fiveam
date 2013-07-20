@@ -74,6 +74,7 @@
    #:*debug-on-error*
    #:*debug-on-failure*
    #:*verbose-failures*
+   #:*print-names*
    #:results-status))
 
 ;;;; You can use #+5am to put your test-defining code inline with your
