@@ -188,7 +188,7 @@ run."))
 
 (defmethod %run ((test test-case))
   (when *print-names*
-    (format *debug-io* "~% Running test ~A " (name test)))
+    (format *test-dribble* "~% Running test ~A " (name test)))
   (run-resolving-dependencies test))
 
 (defmethod %run ((tests list))
@@ -196,7 +196,7 @@ run."))
 
 (defmethod %run ((suite test-suite))
   (when *print-names*
-    (format *debug-io* "~%Running test suite ~A~%" (name suite)))
+    (format *test-dribble* "~%Running test suite ~A~%" (name suite)))
   (let ((suite-results '()))
     (flet ((run-tests ()
              (loop
