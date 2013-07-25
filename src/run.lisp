@@ -196,7 +196,7 @@ run."))
 
 (defmethod %run ((suite test-suite))
   (when *print-names*
-    (format *test-dribble* "~%Running test suite ~A~%" (name suite)))
+    (format *test-dribble* "~%Running test suite ~A" (name suite)))
   (let ((suite-results '()))
     (flet ((run-tests ()
              (loop
