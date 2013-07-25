@@ -54,7 +54,7 @@ Overrides any existing suite named NAME."
 
 (defun list-all-suites ()
   "Returns an unordered LIST of all suites."
-  (hash-table-values *suites*))
+  (hash-table-values *suite*))
 
 ;;;; ** Managing the Current Suite
 
