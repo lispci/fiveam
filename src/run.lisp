@@ -36,11 +36,13 @@
 (defvar *on-error* nil
   "The action to perform on error:
 - :DEBUG if we should drop into the debugger
+- :BACKTRACE to print a backtrace
 - NIL to simply continue")
 
 (defvar *on-failure* nil
   "The action to perform on check failure:
 - :DEBUG if we should drop into the debugger
+- :BACKTRACE to print a backtrace
 - NIL to simply continue")
 
 (defvar *debug-on-error* nil
@@ -163,12 +165,21 @@ run."))
                    (declare (special result-list))
                    (handler-bind ((check-failure (lambda (e)
                                                    (declare (ignore e))
-                                                   (unless (eql *on-failure* :debug)
-                                                     (invoke-restart
-                                                      (find-restart 'ignore-failure)))))
+                                                   (cond
+                                                     ((eql *on-failure* :debug)
+                                                      nil)
+                                                     (t
+                                                      (when (eql *on-failure* :backtrace)
+                                                        (trivial-backtrace:print-backtrace-to-stream
+                                                         *test-dribble*))
+                                                      (invoke-restart
+                                                       (find-restart 'ignore-failure))))))
                                   (error (lambda (e)
                                            (unless (or (eql *on-error* :debug)
                                                        (typep e 'check-failure))
+                                             (when (eql *on-error* :backtrace)
+                                               (trivial-backtrace:print-backtrace-to-stream
+                                                *test-dribble*))
                                              (abort-test e)
                                              (return-from run-it result-list)))))
                      (restart-case
