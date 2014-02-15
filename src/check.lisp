@@ -209,6 +209,10 @@ REASON-ARGS is provided, is generated based on the form of TEST:
              (loop for (expr value) on clauses by #'cddr
                    collect `(is (,predicate ,expr ,value)))))))
 
+(defmacro is-all (&body clauses)
+  "The input is a list of tests. Generates (is ,clause) for each one."
+  `(progn ,@(mapcar (lambda (clause) `(is ,clause)) clauses)))
+
 (defmacro is-true (condition &rest reason-args)
   "Like IS this check generates a pass if CONDITION returns true
   and a failure if CONDITION returns false. Unlike IS this check

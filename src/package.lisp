@@ -43,6 +43,7 @@
    ;; running checks
    #:is
    #:is-every
+   #:is-all
    #:is-true
    #:is-false
    #:signals
