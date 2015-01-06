@@ -234,8 +234,10 @@ run."))
 
 (defun explain! (result-list)
   "Explain the results of RESULT-LIST using a
-detailed-text-explainer with output going to *test-dribble*"
-  (explain (make-instance 'detailed-text-explainer) result-list *test-dribble*))
+detailed-text-explainer with output going to *test-dribble*.
+Return a boolean indicating whether no tests failed."
+  (explain (make-instance 'detailed-text-explainer) result-list *test-dribble*)
+  (notany #'test-failure-p result-list))
 
 (defun debug! (&optional (test-spec *suite*))
   "Calls (run! test-spec) but enters the debugger if any kind of error happens."
