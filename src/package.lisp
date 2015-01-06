@@ -61,7 +61,6 @@
    #:gen-one-element
    ;; running tests
    #:run
-   #:run-all-tests
    #:explain
    #:explain!
    #:run!
