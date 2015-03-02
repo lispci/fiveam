@@ -150,6 +150,19 @@
     (run 'circular-2)))
 
 
+(defun stack-exhaust ()
+  (declare (optimize (debug 3) (speed 0) (space 0) (safety 3)))
+  (cons 42 (stack-exhaust)))
+
+(def-test stack-exhaust (:suite test-suite)
+  (stack-exhaust))
+
+(def-test test-stack-exhaust ()
+  (with-test-results (results stack-exhaust)
+    (is (= 1 (length results)))
+    (is (test-failure-p (first results)))))
+
+
 (def-suite before-test-suite :description "Suite for before test")
 
 (def-test before-0 (:suite before-test-suite)
