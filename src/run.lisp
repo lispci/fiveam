@@ -140,11 +140,11 @@ run."))
 (defmethod run-test-lambda ((test test-case))
   (with-run-state (result-list)
     (bind-run-state ((current-test test))
-      (labels ((abort-test (e)
+      (labels ((abort-test (e &optional (reason (format nil "Unexpected Error: ~S~%~A." e e)))
                  (add-result 'unexpected-test-failure
                              :test-expr nil
                              :test-case test
-                             :reason (format nil "Unexpected Error: ~S~%~A." e e)
+                             :reason reason
                              :condition e))
                (run-it ()
                  (let ((result-list '()))
@@ -160,6 +160,7 @@ run."))
                                              (abort-test e)
                                              (return-from run-it result-list)))))
                      (restart-case
+                         (handler-case
                          (let ((*readtable* (copy-readtable))
                                (*package* (runtime-package test)))
                            (if (collect-profiling-info test)
@@ -167,6 +168,11 @@ run."))
                                ;; (setf (profiling-info test) (collect-timing (test-lambda test)))
                                (funcall (test-lambda test))
                                (funcall (test-lambda test))))
+                           (storage-condition (e)
+                             ;; heap-exhausted/constrol-stack-exhausted
+                             ;; handler-case unwinds the stack (unlike handler-bind)
+                             (abort-test e (format nil "STORAGE-CONDITION: aborted for safety. ~S~%~A." e e))
+                             (return-from run-it result-list)))
                        (retest ()
                          :report (lambda (stream)
                                    (format stream "~@<Rerun the test ~S~@:>" test))
