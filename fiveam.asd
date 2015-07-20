@@ -2,10 +2,7 @@
 
 (defsystem :fiveam
   :author "Edward Marco Baringer <mb@bese.it>"
-  :version #.(with-open-file (f (merge-pathnames "version.lisp-expr"
-                                                 (or *compile-file-pathname*
-                                                     *load-truename*)))
-               (read f))
+  :version (:read-file-form "version.sexp")
   :description "A simple regression testing framework"
   :license "BSD"
   :depends-on (:alexandria)
@@ -19,13 +16,9 @@
                (:file "test" :depends-on ("package" "fixture" "classes"))
                (:file "explain" :depends-on ("package" "utils" "check" "classes" "random"))
                (:file "suite" :depends-on ("package" "test" "classes"))
-               (:file "run" :depends-on ("package" "check" "classes" "test" "explain" "suite")))
-  :in-order-to ((test-op (load-op :fiveam-test)))
-  :perform (test-op :after (op c)
-             (funcall (intern (string '#:run!) :it.bese.fiveam)
-                      :it.bese.fiveam)))
+               (:file "run" :depends-on ("package" "check" "classes" "test" "explain" "suite"))))
 
-(defsystem :fiveam-test
+(defsystem :fiveam/test
   :author "Edward Marco Baringer <mb@bese.it>"
   :description "FiveAM's own test suite"
   :license "BSD"
@@ -33,6 +26,10 @@
   :pathname "t/"
   :components ((:file "suite")
                (:file "tests" :depends-on ("suite"))))
+
+(defmethod perform ((o test-op) (c (eql (find-system :fiveam))))
+  (load-system :fiveam/test :force '(:fiveam/test))
+  (uiop:symbol-call :5am :run! :it.bese.fiveam))
 
 ;;;;@include "src/package.lisp"
 
