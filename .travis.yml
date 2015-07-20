@@ -1,0 +1,41 @@
+language: lisp
+
+env:
+  matrix:
+    - LISP=abcl
+    - LISP=allegro
+    - LISP=ccl
+    - LISP=ccl32
+    - LISP=ecl
+    - LISP=sbcl
+    - LISP=sbcl32
+    - LISP=cmucl
+
+matrix:
+  allow_failures:
+    - env: LISP=cmucl
+
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+  irc:
+    channels:
+      - "chat.freenode.net#iolib"
+    on_success: change
+    on_failure: always
+    use_notice: true
+    skip_join: true
+
+install:
+  - curl -L https://github.com/luismbo/cl-travis/raw/master/install.sh | sh
+  - cl -e "(cl:in-package :cl-user)
+           (dolist (p '(:alexandria))
+             (ql:quickload p :verbose t))"
+
+script:
+  - cl -e "(cl:in-package :cl-user)
+           (ql:quickload :fiveam/test :verbose t)
+           (uiop:quit (if (some (lambda (x) (typep x '5am::test-failure))
+                                (5am:run :it.bese.fiveam))
+                          1 0))"
