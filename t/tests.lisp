@@ -120,7 +120,7 @@
     (is (some #'test-skipped-p results))))
 
 (def-test nested-logic (:depends-on (and ok (not not-ok) (not not-ok))
-                    :suite test-suite)
+                        :suite test-suite)
   (pass))
 
 (def-test dep-nested ()
@@ -130,15 +130,15 @@
     (is (= 1 (length (remove-if-not #'test-failure-p results))))))
 
 (def-test circular-0 (:depends-on (and circular-1 circular-2 or1) 
-                  :suite test-suite)
+                      :suite test-suite)
   (fail "we depend on a circular dependency, we should not be tested."))
 
 (def-test circular-1 (:depends-on (and circular-2)
-                  :suite test-suite)
+                      :suite test-suite)
   (fail "we have a circular depednency, we should not be tested."))
 
 (def-test circular-2 (:depends-on (and circular-1)
-                  :suite test-suite)
+                      :suite test-suite)
   (fail "we have a circular depednency, we should not be tested."))
 
 (def-test circular ()
@@ -156,13 +156,13 @@
   (pass))
 
 (def-test before-1 (:depends-on (:before before-0)
-                :suite before-test-suite)
+                    :suite before-test-suite)
   (fail))
 
 (def-suite before-test-suite-2 :description "Suite for before test")
 
 (def-test before-2 (:depends-on (:before before-3)
-                :suite before-test-suite-2)
+                    :suite before-test-suite-2)
   (pass))
 
 (def-test before-3 (:suite before-test-suite-2)
@@ -181,14 +181,14 @@
   (pass))
 
 (def-test dep-with-symbol-dependencies-not-met (:depends-on (not dep-with-symbol-first)
-                                            :suite test-suite)
+                                                :suite test-suite)
   (fail "Error in the test of the test, this should not ever happen"))
 
 (def-test dep-with-symbol-depends-on-ok (:depends-on dep-with-symbol-first :suite test-suite)
   (pass))
 
 (def-test dep-with-symbol-depends-on-failed-dependency (:depends-on dep-with-symbol-dependencies-not-met
-                                                    :suite test-suite)
+                                                        :suite test-suite)
   (fail "No, I should not be tested becuase I depend on a test that in its turn has a failed dependecy."))
 
 (def-test dependencies-with-symbol ()
