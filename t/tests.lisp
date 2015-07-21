@@ -189,7 +189,7 @@
 
 (def-test dep-with-symbol-depends-on-failed-dependency (:depends-on dep-with-symbol-dependencies-not-met
                                                         :suite test-suite)
-  (fail "No, I should not be tested becuase I depend on a test that in its turn has a failed dependecy."))
+  (fail "No, I should not be tested because I depend on a test that in its turn has a failed dependecy."))
 
 (def-test dependencies-with-symbol ()
   (with-test-results (results dep-with-symbol-first)
