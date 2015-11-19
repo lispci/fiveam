@@ -1,5 +1,8 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
+#.(unless (or #+asdf3.1 (version<= "3.1" (asdf-version)))
+    (error "You need ASDF >= 3.1 to load this system correctly."))
+
 (defsystem :fiveam
   :author "Edward Marco Baringer <mb@bese.it>"
   :version (:read-file-form "version.sexp")
@@ -29,7 +32,7 @@
 
 (defmethod perform ((o test-op) (c (eql (find-system :fiveam))))
   (load-system :fiveam/test :force '(:fiveam/test))
-  (uiop:symbol-call :5am :run! :it.bese.fiveam))
+  (symbol-call :5am :run! :it.bese.fiveam))
 
 ;;;;@include "src/package.lisp"
 
