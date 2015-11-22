@@ -33,6 +33,12 @@
 ;;;; The functions RUN!, !, !! and !!! are convenient wrappers around
 ;;;; RUN and EXPLAIN.
 
+(defparameter *backtrace-on-error* t
+  "T if we should print a backtrace on error, NIL otherwise.")
+
+(defparameter *backtrace-on-failure* t
+  "T if we should print a backtrace on failure, NIL otherwise.")
+
 (defparameter *debug-on-error* nil
   "T if we should drop into a debugger on error, NIL otherwise.")
 
@@ -150,13 +156,20 @@ run."))
                  (let ((result-list '()))
                    (declare (special result-list))
                    (handler-bind ((check-failure (lambda (e)
-                                                   (declare (ignore e))
                                                    (unless *debug-on-failure*
+                                                     (when *backtrace-on-failure*
+                                                       (trivial-backtrace:print-backtrace
+                                                        e
+                                                        :output *test-dribble*))
                                                      (invoke-restart
                                                       (find-restart 'ignore-failure)))))
                                   (error (lambda (e)
                                            (unless (or *debug-on-error*
                                                        (typep e 'check-failure))
+                                             (when *backtrace-on-error*
+                                               (trivial-backtrace:print-backtrace
+                                                e
+                                                :output *test-dribble*))
                                              (abort-test e)
                                              (return-from run-it result-list)))))
                      (restart-case
