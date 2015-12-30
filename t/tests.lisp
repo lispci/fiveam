@@ -150,6 +150,7 @@
     (run 'circular-2)))
 
 
+;;; Before tests fail on CCL and CLISP before my changes too -- maxm
 (def-suite before-test-suite :description "Suite for before test")
 
 (def-test before-0 (:suite before-test-suite)
