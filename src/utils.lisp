@@ -195,6 +195,18 @@ which is the concatenation of \"WITH-\" NAME. BINDER is built as
             ,@body))
        ',name)))
 
+(defmacro timer (&body body)
+  "Return the number of internal real time units that BODY takes to run to
+   completion."
+  (with-gensyms (beg)
+    `(let ((,beg (get-internal-real-time)))
+       ,@body
+       (- (get-internal-real-time) ,beg))))
+
+(defun internal->ms (internal)
+  "Convert internal real time units to milliseconds."
+  (floor (/ internal #.(/ internal-time-units-per-second 1000))))
+
 ;; Copyright (c) 2002-2006, Edward Marco Baringer
 ;; All rights reserved.
 ;;

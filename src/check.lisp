@@ -277,6 +277,17 @@ fails."
             :reason (format nil "Test didn't finish")
             :test-expr ',body)))))
 
+(defmacro deadline ((ms) &body body)
+  "Generates a pass if the body finishes within the given number of
+   milliseconds."
+  (with-gensyms (duration)
+    `(let ((,duration (internal->ms (timer ,@body))))
+       (if (<= ,duration ,ms)
+           (add-result 'test-passed :test-expr ',body)
+           (process-failure
+            :reason (format nil "Test supposed to finish within ~Dms, but took ~Dms" ,ms ,duration)
+            :test-expr ',body)))))
+
 (defmacro pass (&rest message-args)
   "Simply generate a PASS."
   `(add-result 'test-passed
