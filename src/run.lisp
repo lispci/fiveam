@@ -272,6 +272,21 @@ performed by the !, !! and !!! functions."
   "Rerun the third most recently run test and explain the results."
   (explain! (funcall *!!!*)))
 
+
+(defgeneric test-cases (what)
+  (:documentation "Return test-cases specified by WHAT."))
+
+(defmethod test-cases ((test symbol))
+  (alexandria:ensure-list 
+    (test-cases (get-test test))))
+
+(defmethod test-cases ((test test-case))
+  (list test))
+
+(defmethod test-cases ((suite test-suite))
+  (mapcan #'test-cases
+          (alexandria:hash-table-values (tests suite))))
+
 (defun run-all-tests (&key verbose)
   "Run all defined tests, and provide short output to *test-dribble*."
   (explain (make-instance (if verbose 
@@ -279,9 +294,13 @@ performed by the !, !! and !!! functions."
                             'simple-text-explainer))
            ;; Don't show the dots for each test.
            (let ((*test-dribble* (make-broadcast-stream)))
-             (loop for test in (test-names)
+             ;; And avoid duplicates (running a suite *and* the test-case)
+             (loop for test in (delete-duplicates 
+                                 (mapcan #'test-cases (test-names))
+                                 :test #'eq)
                    append (run test :print-names nil)))
            *test-dribble*))
+  
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved.
