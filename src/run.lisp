@@ -272,6 +272,17 @@ performed by the !, !! and !!! functions."
   "Rerun the third most recently run test and explain the results."
   (explain! (funcall *!!!*)))
 
+(defun run-all-tests (&key verbose)
+  "Run all defined tests, and provide short output to *test-dribble*."
+  (explain (make-instance (if verbose 
+                            'detailed-text-explainer
+                            'simple-text-explainer))
+           ;; Don't show the dots for each test.
+           (let ((*test-dribble* (make-broadcast-stream)))
+             (loop for test in (test-names)
+                   append (run test :print-names nil)))
+           *test-dribble*))
+
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved.
 ;;
