@@ -270,3 +270,11 @@
   (for-all (((a b) (dummy-mv-generator)))
     (is (= 1 a))
     (is (= 1 b))))
+
+(def-test return-values ()
+  "Return values indicate test failures."
+  (is-true (with-*test-dribble* nil (explain! (run 'is1))))
+  (is-true (with-*test-dribble* nil (run! 'is1)))
+
+  (is-false (with-*test-dribble* nil (explain! (run 'is2))))
+  (is-false (with-*test-dribble* nil (run! 'is2))))
