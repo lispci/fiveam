@@ -2,7 +2,7 @@
 
 (in-package :it.bese.fiveam)
 
-(in-suite :it.bese.fiveam)
+(in-suite* :it.bese.fiveam)
 
 (def-suite test-suite :description "Suite for tests which should fail.")
 

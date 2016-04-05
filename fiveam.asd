@@ -8,7 +8,7 @@
   :version (:read-file-form "version.sexp")
   :description "A simple regression testing framework"
   :license "BSD"
-  :depends-on (:alexandria)
+  :depends-on (:alexandria :net.didierverna.asdf-flv)
   :pathname "src/"
   :components ((:file "package")
                (:file "utils" :depends-on ("package"))
@@ -27,8 +27,7 @@
   :license "BSD"
   :depends-on (:fiveam)
   :pathname "t/"
-  :components ((:file "suite")
-               (:file "tests" :depends-on ("suite"))))
+  :components ((:file "tests")))
 
 (defmethod perform ((o test-op) (c (eql (find-system :fiveam))))
   (load-system :fiveam/test :force '(:fiveam/test))

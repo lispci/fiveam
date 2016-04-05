@@ -14,7 +14,22 @@
 ;;;; run. Suites do not affect test dependencies, running a test suite
 ;;;; can cause tests which are not in the suite to be run.
 
+;;;; ** Current Suite
+
+(defvar *suite* nil
+  "The current test suite object")
+(net.didierverna.asdf-flv:set-file-local-variable *suite*)
+
 ;;;; ** Creating Suits
+
+;; Suites that have no parent suites.
+(defvar *toplevel-suites* nil)
+
+(defgeneric suite-emptyp (suite)
+  (:method ((suite symbol))
+    (suite-emptyp (get-test suite)))
+  (:method ((suite test-suite))
+    (= 0 (hash-table-count (tests suite)))))
 
 (defmacro def-suite (name &key description in)
   "Define a new test-suite named NAME.
@@ -41,6 +56,10 @@ Overrides any existing suite named NAME."
   (let ((suite (make-instance 'test-suite :name name)))
     (when description
       (setf (description suite) description))
+    (when (and name
+               (null (name *suite*))
+               (null parent-suite))
+      (pushnew name *toplevel-suites*))
     (loop for i in (ensure-list parent-suite)
           for in-suite = (get-test i)
           do (progn
@@ -52,15 +71,16 @@ Overrides any existing suite named NAME."
     (setf (get-test name) suite)
     suite))
 
+(eval-when (:load-toplevel :execute)
+  (setf *suite*
+        (setf (get-test 'NIL)
+              (make-suite 'NIL :description "Global Suite"))))
+
 (defun list-all-suites ()
   "Returns an unordered LIST of all suites."
   (hash-table-values *suite*))
 
 ;;;; ** Managing the Current Suite
-
-(defvar *suite* (setf (get-test 'NIL)
-                      (make-suite 'NIL :description "Global Suite"))
-  "The current test suite object")
 
 (defmacro in-suite (suite-name)
   "Set the *suite* special variable so that all tests defined
@@ -73,7 +93,8 @@ See also: DEF-SUITE *SUITE*"
 
 (defmacro in-suite* (suite-name &key in)
   "Just like in-suite, but silently creates missing suites."
-  `(%in-suite ,suite-name :in ,in :fail-on-error nil))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (%in-suite ,suite-name :in ,in :fail-on-error nil)))
 
 (defmacro %in-suite (suite-name &key (fail-on-error t) in)
   (with-gensyms (suite)
