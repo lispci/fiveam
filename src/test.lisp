@@ -63,7 +63,7 @@ If PROFILE is T profiling information will be collected as well."
     `(def-test ,name (,@args) ,@body)))
 
 (defmacro def-test (name (&key depends-on (suite '*suite* suite-p) fixture
-                            (compile-at :run-time) profile)
+                            (compile-at :definition-time) profile)
                     &body body)
   "Create a test named NAME.
 
