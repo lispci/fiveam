@@ -154,6 +154,9 @@
   (declare (optimize (debug 3) (speed 0) (space 0) (safety 3)))
   (cons 42 (stack-exhaust)))
 
+;; Disable until we determine on which implementations it's actually safe
+;; to exhaust the stack.
+#|
 (def-test stack-exhaust (:suite test-suite)
   (stack-exhaust))
 
@@ -161,7 +164,7 @@
   (with-test-results (results stack-exhaust)
     (is (= 1 (length results)))
     (is (test-failure-p (first results)))))
-
+|#
 
 (def-suite before-test-suite :description "Suite for before test")
 
