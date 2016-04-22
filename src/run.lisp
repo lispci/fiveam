@@ -280,18 +280,26 @@ performed by the !, !! and !!! functions."
   "Rerun the third most recently run test and explain the results."
   (explain! (funcall *!!!*)))
 
-(defun run-all-tests ()
-  "Runs all defined test suites, T if all tests passed and NIL otherwise."
+(defun run-all-tests (&key (summary :end))
+  "Runs all defined test suites, T if all tests passed and NIL otherwise.
+SUMMARY can be :END to print a summary at the end, :SUITE to print it
+after each suite or NIL to skip explanations."
+  (check-type summary (member nil :suite :end))
   (loop :for suite :in (cons 'NIL (sort (copy-list *toplevel-suites*) #'string<=))
         :for results := (if (suite-emptyp suite) nil (run suite))
         :when (consp results)
           :collect results :into all-results
         :do (cond
+              ((not (eql summary :suite))
+               nil)
               (results
                (explain! results))
               (suite
                (format *test-dribble* "Suite ~A is empty~%" suite)))
-        :finally (return (every #'results-status all-results))))
+        :finally (progn
+                   (when (eql summary :end)
+                     (explain! (alexandria:flatten all-results)))
+                   (return (every #'results-status all-results)))))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved.
