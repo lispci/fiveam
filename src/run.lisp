@@ -184,13 +184,13 @@ run."))
                                              (return-from run-it result-list)))))
                      (restart-case
                          (handler-case
-                         (let ((*readtable* (copy-readtable))
-                               (*package* (runtime-package test)))
-                           (if (collect-profiling-info test)
-                               ;; Timing info doesn't get collected ATM, we need a portable library
-                               ;; (setf (profiling-info test) (collect-timing (test-lambda test)))
-                               (funcall (test-lambda test))
-                               (funcall (test-lambda test))))
+                             (let ((*readtable* (copy-readtable))
+                                   (*package* (runtime-package test)))
+                               (if (collect-profiling-info test)
+                                   ;; Timing info doesn't get collected ATM, we need a portable library
+                                   ;; (setf (profiling-info test) (collect-timing (test-lambda test)))
+                                   (funcall (test-lambda test))
+                                   (funcall (test-lambda test))))
                            (storage-condition (e)
                              ;; heap-exhausted/constrol-stack-exhausted
                              ;; handler-case unwinds the stack (unlike handler-bind)
@@ -204,7 +204,7 @@ run."))
                          :report (lambda (stream)
                                    (format stream "~@<Signal an exceptional test failure and abort the test ~S.~@:>" test))
                          (abort-test (make-instance 'test-failure :test-case test
-                                                    :reason "Failure restart."))))
+                                                                  :reason "Failure restart."))))
                      result-list))))
         (let ((results (run-it)))
           (setf (status test) (results-status results)
