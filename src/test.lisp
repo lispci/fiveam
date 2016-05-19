@@ -62,8 +62,10 @@ If PROFILE is T profiling information will be collected as well."
       (ensure-list name)
     `(def-test ,name (,@args) ,@body)))
 
+(defvar *default-test-compilation-time* :definition-time)
+
 (defmacro def-test (name (&key depends-on (suite '*suite* suite-p) fixture
-                            (compile-at :definition-time) profile)
+                            (compile-at *default-test-compilation-time*) profile)
                     &body body)
   "Create a test named NAME.
 

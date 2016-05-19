@@ -34,6 +34,7 @@
    #:get-test
    #:rem-test
    #:test-names
+   #:*default-test-compilation-time*
    ;; fixtures
    #:make-fixture
    #:def-fixture
