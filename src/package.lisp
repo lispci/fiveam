@@ -74,6 +74,8 @@
    #:*run-test-when-defined*
    #:*debug-on-error*
    #:*debug-on-failure*
+   #:*on-error*
+   #:*on-failure*
    #:*verbose-failures*
    #:*print-names*
    #:results-status))

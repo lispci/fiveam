@@ -16,7 +16,7 @@
 ;;;; exceptional situations which can occur:
 
 ;;;; - An exception is signaled while running the test. If the
-;;;;   variable *debug-on-error* is T than FiveAM will enter the
+;;;;   variable *on-error* is :DEBUG than FiveAM will enter the
 ;;;;   debugger, otherwise a test failure (of type
 ;;;;   unexpected-test-failure) is returned. When entering the
 ;;;;   debugger two restarts are made available, one simply reruns the
@@ -33,11 +33,23 @@
 ;;;; The functions RUN!, !, !! and !!! are convenient wrappers around
 ;;;; RUN and EXPLAIN.
 
-(defparameter *debug-on-error* nil
-  "T if we should drop into a debugger on error, NIL otherwise.")
+(defvar *on-error* nil
+  "The action to perform on error:
+- :DEBUG if we should drop into the debugger
+- NIL to simply continue")
 
-(defparameter *debug-on-failure* nil
-  "T if we should drop into a debugger on a failing check, NIL otherwise.")
+(defvar *on-failure* nil
+  "The action to perform on check failure:
+- :DEBUG if we should drop into the debugger
+- NIL to simply continue")
+
+(defvar *debug-on-error* nil
+  "T if we should drop into the debugger on error, NIL otherwise.
+OBSOLETE: superseded by *ON-ERROR*")
+
+(defvar *debug-on-failure* nil
+  "T if we should drop into the debugger on a failing check, NIL otherwise.
+OBSOLETE: superseded by *ON-FAILURE*")
 
 (defparameter *print-names* t
   "T if we should print test running progress, NIL otherwise.")
@@ -151,11 +163,11 @@ run."))
                    (declare (special result-list))
                    (handler-bind ((check-failure (lambda (e)
                                                    (declare (ignore e))
-                                                   (unless *debug-on-failure*
+                                                   (unless (eql *on-failure* :debug)
                                                      (invoke-restart
                                                       (find-restart 'ignore-failure)))))
                                   (error (lambda (e)
-                                           (unless (or *debug-on-error*
+                                           (unless (or (eql *on-error* :debug)
                                                        (typep e 'check-failure))
                                              (abort-test e)
                                              (return-from run-it result-list)))))
@@ -247,8 +259,8 @@ Return a boolean indicating whether no tests failed."
 
 (defun debug! (&optional (test-spec *suite*))
   "Calls (run! test-spec) but enters the debugger if any kind of error happens."
-  (let ((*debug-on-error* t)
-        (*debug-on-failure* t))
+  (let ((*on-error* :debug)
+        (*on-failure* :debug))
     (run! test-spec)))
 
 (defun run (test-spec &key ((:print-names *print-names*) *print-names*))
@@ -266,7 +278,19 @@ performed by the !, !! and !!! functions."
                  result-list))
          *!!* *!*
          *!!!* *!!*)
-  (funcall *!*))
+  (let ((*on-error*
+          (or *on-error* (cond
+                           (*debug-on-error*
+                            (format *test-dribble* "*DEBUG-ON-ERROR* is obsolete. Use *ON-ERROR.")
+                            :debug)
+                           (t nil))))
+        (*on-failure*
+          (or *on-failure* (cond
+                           (*debug-on-failure*
+                            (format *test-dribble* "*DEBUG-ON-FAILURE* is obsolete. Use *ON-FAILURE.")
+                            :debug)
+                           (t nil)))))
+    (funcall *!*)))
 
 (defun ! ()
   "Rerun the most recently run test and explain the results."
