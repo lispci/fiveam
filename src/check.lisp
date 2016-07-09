@@ -266,16 +266,11 @@ not evaluated."
   "Generates a pass if BODY executes to normal completion. In
 other words if body does signal, return-from or throw this test
 fails."
-  `(let ((ok nil))
-     (unwind-protect
-          (progn
-            ,@body
-            (setf ok t))
-       (if ok
-           (add-result 'test-passed :test-expr ',body)
-           (process-failure
-            :reason (format nil "Test didn't finish")
-            :test-expr ',body)))))
+  `(unwind-protect-case () (progn ,@body)
+     (:normal (add-result 'test-passed :test-expr ',body))
+     (:abort (process-failure
+              :reason (format nil "Test didn't finish")
+              :test-expr ',body))))
 
 (defmacro pass (&rest message-args)
   "Simply generate a PASS."
