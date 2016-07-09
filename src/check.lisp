@@ -282,14 +282,14 @@ fails."
   `(add-result 'test-passed
                :test-expr ',message-args
                ,@(when message-args
-                       `(:reason (format nil ,@message-args)))))
+                   `(:reason (format nil ,@message-args)))))
 
 (defmacro fail (&rest message-args)
   "Simply generate a FAIL."
   `(process-failure
     :test-expr ',message-args
     ,@(when message-args
-            `(:reason (format nil ,@message-args)))))
+        `(:reason (format nil ,@message-args)))))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved.
