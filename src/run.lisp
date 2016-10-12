@@ -33,6 +33,11 @@
 ;;;; The functions RUN!, !, !! and !!! are convenient wrappers around
 ;;;; RUN and EXPLAIN.
 
+(deftype on-problem-action ()
+  '(member :debug :backtrace nil))
+
+(declaim (type on-problem-action *on-error* *on-failure*))
+
 (defvar *on-error* nil
   "The action to perform on error:
 - :DEBUG if we should drop into the debugger
