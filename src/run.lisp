@@ -138,13 +138,16 @@ run."))
 
 (defun results-status (result-list)
   "Given a list of test results (generated while running a test)
-  return true if all of the results are of type TEST-PASSED,
-  fail otherwise.
-  Returns a second value, which is the set of failed tests."
+  return true if no results are of type TEST-FAILURE.  Returns second
+  and third values, which are the set of failed tests and skipped
+  tests respectively."
   (let ((failed-tests
-          (remove-if #'test-passed-p result-list)))
+          (remove-if-not #'test-failure-p result-list))
+        (skipped-tests
+          (remove-if-not #'test-skipped-p result-list)))
     (values (null failed-tests)
-            failed-tests)))
+            failed-tests
+            skipped-tests)))
 
 (defun return-result-list (test-lambda)
   "Run the test function TEST-LAMBDA and return a list of all
