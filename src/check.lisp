@@ -56,11 +56,14 @@
                       (test-expr c)
                       (reason c)))))
 
-(defmacro process-failure (&rest args)
-  `(progn
-     (with-simple-restart (ignore-failure "Continue the test run.")
-       (error 'check-failure ,@args))
-     (add-result 'test-failure ,@args)))
+(defun process-failure (test-expr &optional reason-format &rest format-args)
+  (let ((reason (and reason-format
+                     (apply #'format nil reason-format format-args))))
+    (with-simple-restart (ignore-failure "Continue the test run.")
+      (error 'check-failure :test-expr test-expr
+                            :reason reason))
+    (add-result 'test-failure :test-expr test-expr
+                              :reason reason)))
 
 (defclass test-failure (test-result)
   ()
@@ -186,8 +189,8 @@ REASON-ARGS is provided, is generated based on the form of TEST:
       `(let ,bindings
          (if ,effective-test
              (add-result 'test-passed :test-expr ',test)
-             (process-failure :reason (format nil ,@(or reason-args default-reason-args))
-                              :test-expr ',test))))))
+             (process-failure ',test
+                              ,@(or reason-args default-reason-args)))))))
 
 ;;;; *** Other checks
 
@@ -216,26 +219,21 @@ REASON-ARGS is provided, is generated based on the form of TEST:
   failure."
   `(if ,condition
        (add-result 'test-passed :test-expr ',condition)
-       (process-failure
-        :reason ,(if reason-args
-                     `(format nil ,@reason-args)
-                     `(format nil "~S did not return a true value" ',condition))
-        :test-expr ',condition)))
+       (process-failure ',condition
+                        ,@(or reason-args
+                              `("~S did not return a true value" ',condition)))))
 
 (defmacro is-false (condition &rest reason-args)
   "Generates a pass if CONDITION returns false, generates a
   failure otherwise. Like IS-TRUE, and unlike IS, IS-FALSE does
   not inspect CONDITION to determine what reason to give it case
   of test failure"
-
   (with-gensyms (value)
     `(let ((,value ,condition))
        (if ,value
-           (process-failure
-            :reason ,(if reason-args
-                         `(format nil ,@reason-args)
-                         `(format nil "~S returned the value ~S, which is true" ',condition ,value ))
-            :test-expr ',condition)
+           (process-failure ',condition
+                            ,@(or reason-args
+                                  `("~S returned the value ~S, which is true" ',condition ,value)))
            (add-result 'test-passed :test-expr ',condition)))))
 
 (defmacro signals (condition-spec
@@ -256,10 +254,10 @@ not evaluated."
            (block nil
              ,@body))
          (process-failure
-          :reason ,(if reason-control
-                       `(format nil ,reason-control ,@reason-args)
-                       `(format nil "Failed to signal a ~S" ',condition))
-          :test-expr ',condition)
+           ',condition
+           ,@(if reason-control
+                 `(,reason-control ,@reason-args)
+                 `("Failed to signal a ~S" ',condition)))
          (return-from ,block-name nil)))))
 
 (defmacro finishes (&body body)
@@ -268,9 +266,7 @@ other words if body does signal, return-from or throw this test
 fails."
   `(unwind-protect-case () (progn ,@body)
      (:normal (add-result 'test-passed :test-expr ',body))
-     (:abort (process-failure
-              :reason (format nil "Test didn't finish")
-              :test-expr ',body))))
+     (:abort (process-failure ',body "Test didn't finish"))))
 
 (defmacro pass (&rest message-args)
   "Simply generate a PASS."
@@ -281,10 +277,8 @@ fails."
 
 (defmacro fail (&rest message-args)
   "Simply generate a FAIL."
-  `(process-failure
-    :test-expr ',message-args
-    ,@(when message-args
-        `(:reason (format nil ,@message-args)))))
+  `(process-failure ',message-args
+                    ,@message-args))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved.
