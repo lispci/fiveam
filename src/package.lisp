@@ -26,6 +26,7 @@
    ;; creating tests and test-suites
    #:make-suite
    #:def-suite
+   #:def-suite*
    #:in-suite
    #:in-suite*
    #:make-test
