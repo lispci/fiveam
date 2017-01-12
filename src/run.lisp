@@ -300,13 +300,13 @@ performed by the !, !! and !!! functions."
   (let ((*on-error*
           (or *on-error* (cond
                            (*debug-on-error*
-                            (format *test-dribble* "*DEBUG-ON-ERROR* is obsolete. Use *ON-ERROR.")
+                            (format *test-dribble* "*DEBUG-ON-ERROR* is obsolete. Use *ON-ERROR*.")
                             :debug)
                            (t nil))))
         (*on-failure*
           (or *on-failure* (cond
                            (*debug-on-failure*
-                            (format *test-dribble* "*DEBUG-ON-FAILURE* is obsolete. Use *ON-FAILURE.")
+                            (format *test-dribble* "*DEBUG-ON-FAILURE* is obsolete. Use *ON-FAILURE*.")
                             :debug)
                            (t nil)))))
     (funcall *!*)))
