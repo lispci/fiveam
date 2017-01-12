@@ -84,9 +84,9 @@ creates a TEST-PASSED or TEST-FAILURE object."))
 
 (defclass test-skipped (test-result)
   ()
-  (:documentation "A test which was not run. Usually this is due
-to unsatisfied dependencies, but users can decide to skip test
-when appropiate."))
+  (:documentation "A test which was not run. Usually this is due to
+unsatisfied dependencies, but users can decide to skip the test when
+appropriate."))
 
 (defgeneric test-skipped-p (object)
   (:method ((o t)) nil)
@@ -94,7 +94,7 @@ when appropiate."))
 
 (defun add-result (result-type &rest make-instance-args)
   "Create a TEST-RESULT object of type RESULT-TYPE passing it the
-  initialize args MAKE-INSTANCE-ARGS and adds the resulting
+  initialize args MAKE-INSTANCE-ARGS and add the resulting
   object to the list of test results."
   (with-run-state (result-list current-test)
     (let ((result (apply #'make-instance result-type

@@ -48,7 +48,7 @@ form which, if present, stops BODY from executing when IT returns
 NIL. The GUARDS are evaluated after all the random data has been
 generated and they can refer to the current value of any
 binding. NB: Generator forms, unlike guard forms, can not contain
-references to the boud variables.
+references to the bound variables.
 
 Examples:
 
@@ -163,13 +163,13 @@ Examples:
 (defun gen-integer (&key (max (1+ most-positive-fixnum))
                          (min (1- most-negative-fixnum)))
   "Returns a generator which produces random integers greater
-than or equal to MIN and less than or equal to MIN."
+than or equal to MIN and less than or equal to MAX."
   (lambda ()
     (+ min (random (1+ (- max min))))))
 
 (defun gen-float (&key bound (type 'short-float))
-  "Returns a generator which producs floats of type TYPE. BOUND,
-if specified, constrains the ruselts to be in the range (-BOUND,
+  "Returns a generator which produces floats of type TYPE. BOUND,
+if specified, constrains the results to be in the range (-BOUND,
 BOUND)."
   (lambda ()
     (let* ((most-negative (ecase type
@@ -214,8 +214,8 @@ alphanumericp."
 (defun gen-string (&key (length (gen-integer :min 0 :max 80))
                         (elements (gen-character))
                         (element-type 'character))
-  "Returns a generator which producs random strings. LENGTH must
-be a generator which producs integers, ELEMENTS must be a
+  "Returns a generator which produces random strings. LENGTH must
+be a generator which produces integers, ELEMENTS must be a
 generator which produces characters of type ELEMENT-TYPE."
   (lambda ()
     (loop
@@ -227,9 +227,9 @@ generator which produces characters of type ELEMENT-TYPE."
 
 (defun gen-list (&key (length (gen-integer :min 0 :max 10))
                       (elements (gen-integer :min -10 :max 10)))
-  "Returns a generator which producs random lists. LENGTH must be
+  "Returns a generator which produces random lists. LENGTH must be
 an integer generator and ELEMENTS must be a generator which
-producs objects."
+produces objects."
   (lambda ()
     (loop
        repeat (funcall length)
@@ -237,7 +237,7 @@ producs objects."
 
 (defun gen-tree (&key (size 20)
                       (elements (gen-integer :min -10 :max 10)))
-  "Returns a generator which producs random trees. SIZE control
+  "Returns a generator which produces random trees. SIZE controls
 the approximate size of the tree, but don't try anything above
  30, you have been warned. ELEMENTS must be a generator which
 will produce the elements."
