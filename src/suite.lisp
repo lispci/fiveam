@@ -57,7 +57,6 @@ Overrides any existing suite named NAME."
     (when description
       (setf (description suite) description))
     (when (and name
-               (null (name *suite*))
                (null parent-suite))
       (pushnew name *toplevel-suites*))
     (loop for i in (ensure-list parent-suite)
