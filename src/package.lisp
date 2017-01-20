@@ -49,6 +49,7 @@
    #:is-false
    #:signals
    #:finishes
+   #:deadline
    #:skip
    #:pass
    #:fail

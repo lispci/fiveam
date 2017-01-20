@@ -46,6 +46,17 @@
    (signals error
     (error "an error"))))
 
+(def-test deadline1 (:suite test-suite)
+  (deadline (500)
+    (sleep 1)))
+
+(def-test deadline ()
+  (with-test-results (results deadline1)
+    (is (= 1 (length results)))
+    (is (test-failure-p (first results))))
+  (deadline (1250)
+    (sleep 1)))
+
 (def-test pass ()
   (pass))
 
