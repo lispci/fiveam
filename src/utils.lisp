@@ -155,9 +155,14 @@ ELSE will be executed."
             (var)
             "Unrecognized symbol ~S in ~S." var name)))
 
+(defgeneric call-environment-binding (name bindings style thunk))
+
+(defmethod call-environment-binding ((name symbol) (bindings list) (style symbol) (thunk t))
+  (funcall thunk))
+
 (defmacro def-special-environment (name (&key accessor binder binder*)
-                                  &rest vars)
-  "Define two macros for dealing with groups or related special variables.
+                                   &rest vars)
+  "Define two macros for dealing with groups of related special variables.
 
 ACCESSOR is defined as a macro: (defmacro ACCESSOR (VARS &rest
 BODY)).  Each element of VARS will be bound to the
@@ -165,7 +170,7 @@ current (dynamic) value of the special variable.
 
 BINDER is defined as a macro for introducing (and binding new)
 special variables. It is basically a readable LET form with the
-prorpe declarations appended to the body. The first argument to
+proper declarations appended to the body. The first argument to
 BINDER must be a form suitable as the first argument to LET.
 
 ACCESSOR defaults to a new symbol in the same package as NAME
@@ -178,17 +183,22 @@ which is the concatenation of \"WITH-\" NAME. BINDER is built as
   (unless binder*
     (setf binder*  (format-symbol (symbol-package binder) "~A~A" binder '#:*)))
   `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (flet ()
+     (flet ((make-capture (binding)
+              `(list ',(first binding) ,(first binding))))
        (defmacro ,binder (requested-vars &body body)
          (check-required ',name ',vars (mapcar #'car requested-vars))
          `(let ,requested-vars
             (declare (special ,@(mapcar #'car requested-vars)))
-            ,@body))
+            (call-environment-binding
+             ',',name (list ,@(mapcar #'make-capture requested-vars)) 'let
+             (lambda () ,@body))))
        (defmacro ,binder* (requested-vars &body body)
          (check-required ',name ',vars (mapcar #'car requested-vars))
          `(let* ,requested-vars
             (declare (special ,@(mapcar #'car requested-vars)))
-            ,@body))
+            (call-environment-binding
+             ',',name (list ,@(mapcar #'make-capture requested-vars)) 'let*
+             (lambda () ,@body))))
        (defmacro ,accessor (requested-vars &body body)
          (check-required ',name ',vars requested-vars)
          `(locally (declare (special ,@requested-vars))

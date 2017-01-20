@@ -92,7 +92,9 @@ when appropiate."))
   (:method ((o t)) nil)
   (:method ((o test-skipped)) t))
 
-(defun add-result (result-type &rest make-instance-args)
+(defgeneric add-result (result-type &rest make-instance-args))
+
+(defmethod add-result ((result-type t) &rest make-instance-args)
   "Create a TEST-RESULT object of type RESULT-TYPE passing it the
   initialize args MAKE-INSTANCE-ARGS and adds the resulting
   object to the list of test results."
