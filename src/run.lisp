@@ -328,7 +328,7 @@ performed by the !, !! and !!! functions."
 SUMMARY can be :END to print a summary at the end, :SUITE to print it
 after each suite or NIL to skip explanations."
   (check-type summary (member nil :suite :end))
-  (loop :for suite :in (cons 'NIL (sort (copy-list *toplevel-suites*) #'string<=))
+  (loop :for suite :in (cons 'nil (sort (copy-list *toplevel-suites*) #'string<=))
         :for results := (if (suite-emptyp suite) nil (run suite))
         :when (consp results)
           :collect results :into all-results
