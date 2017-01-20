@@ -28,7 +28,6 @@
    #:def-suite
    #:def-suite*
    #:in-suite
-   #:in-suite*
    #:make-test
    #:test
    #:def-test
@@ -64,7 +63,6 @@
    #:gen-one-element
    ;; running tests
    #:run
-   #:run-all-tests
    #:explain
    #:explain!
    #:run!
