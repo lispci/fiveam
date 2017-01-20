@@ -73,8 +73,8 @@ Overrides any existing suite named NAME."
 
 (eval-when (:load-toplevel :execute)
   (setf *suite*
-        (setf (get-test 'NIL)
-              (make-suite 'NIL :description "Global Suite"))))
+        (setf (get-test 'nil)
+              (make-suite 'nil :description "Global Suite"))))
 
 (defun list-all-suites ()
   "Returns an unordered LIST of all suites."
