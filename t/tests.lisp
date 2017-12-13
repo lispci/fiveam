@@ -169,11 +169,11 @@
 (def-suite before-test-suite :description "Suite for before test")
 
 (def-test before-0 (:suite before-test-suite)
-  (pass))
+  (fail))
 
 (def-test before-1 (:depends-on (:before before-0)
                     :suite before-test-suite)
-  (fail))
+  (pass))
 
 (def-suite before-test-suite-2 :description "Suite for before test")
 
