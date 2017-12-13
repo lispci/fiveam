@@ -196,6 +196,8 @@ run."))
                          (handler-case
                              (let ((*readtable* (copy-readtable))
                                    (*package* (runtime-package test)))
+                               (when *print-names*
+                                   (format *test-dribble* "~% Running test ~A " (name test)))
                                (if (collect-profiling-info test)
                                    ;; Timing info doesn't get collected ATM, we need a portable library
                                    ;; (setf (profiling-info test) (collect-timing (test-lambda test)))
@@ -226,8 +228,6 @@ run."))
   !!, !!!"))
 
 (defmethod %run ((test test-case))
-  (when *print-names*
-    (format *test-dribble* "~% Running test ~A " (name test)))
   (run-resolving-dependencies test))
 
 (defmethod %run ((tests list))
