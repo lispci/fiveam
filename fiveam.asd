@@ -30,7 +30,7 @@
   :components ((:file "tests")))
 
 (defmethod perform ((o test-op) (c (eql (find-system :fiveam))))
-  (load-system :fiveam/test :force '(:fiveam/test))
+  (load-system :fiveam/test)
   (symbol-call :5am :run! :it.bese.fiveam))
 
 ;;;;@include "src/package.lisp"
