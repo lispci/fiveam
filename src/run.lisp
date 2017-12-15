@@ -61,6 +61,12 @@ OBSOLETE: superseded by *ON-FAILURE*")
 (defparameter *print-names* t
   "T if we should print test running progress, NIL otherwise.")
 
+(defparameter *test-dribble-indent* (make-array 0
+                                        :element-type 'character
+                                        :fill-pointer 0
+                                        :adjustable t)
+  "Used to indent tests and test suites in their parent suite")
+
 (defun import-testing-symbols (package-designator)
   (import '(5am::is 5am::is-true 5am::is-false 5am::signals 5am::finishes)
           package-designator))
@@ -197,7 +203,7 @@ run."))
                              (let ((*readtable* (copy-readtable))
                                    (*package* (runtime-package test)))
                                (when *print-names*
-                                   (format *test-dribble* "~% Running test ~A " (name test)))
+                                   (format *test-dribble* "~%~ARunning test ~A " *test-dribble-indent* (name test)))
                                (if (collect-profiling-info test)
                                    ;; Timing info doesn't get collected ATM, we need a portable library
                                    ;; (setf (profiling-info test) (collect-timing (test-lambda test)))
@@ -235,12 +241,13 @@ run."))
 
 (defmethod %run ((suite test-suite))
   (when *print-names*
-    (format *test-dribble* "~%Running test suite ~A" (name suite)))
+    (format *test-dribble* "~%~ARunning test suite ~A" *test-dribble-indent* (name suite)))
   (let ((suite-results '()))
     (flet ((run-tests ()
              (loop
                 for test being the hash-values of (tests suite)
                 do (%run test))))
+      (vector-push-extend #\space *test-dribble-indent*)
       (unwind-protect
            (bind-run-state ((result-list '()))
              (unwind-protect
@@ -251,6 +258,7 @@ run."))
                       (run-tests)))
              (setf suite-results result-list
                    (status suite) (every #'test-passed-p suite-results)))
+        (vector-pop *test-dribble-indent*)
         (with-run-state (result-list)
           (setf result-list (nconc result-list suite-results)))))))
 
