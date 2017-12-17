@@ -81,7 +81,7 @@ is satisfied or not, this will generally involve running other
 tests. If the dependency spec can be satisfied the test is also
 run."))
 
-(defmethod run-resolving-dependencies ((test test-case))
+(defmethod run-resolving-dependencies ((test testable-object))
   "Return true if this test, and its dependencies, are satisfied,
   NIL otherwise."
   (case (status test)
@@ -90,7 +90,7 @@ run."))
      (if (or (not (depends-on test))
              (eql t (resolve-dependencies (depends-on test))))
          (progn
-           (run-test-lambda test)
+           (evaluate-test test)
            (status test))
          (with-run-state (result-list)
            (unless (eql :circular (status test))
@@ -159,9 +159,9 @@ run."))
     (funcall test-lambda)
     result-list))
 
-(defgeneric run-test-lambda (test))
+(defgeneric evaluate-test (test))
 
-(defmethod run-test-lambda ((test test-case))
+(defmethod evaluate-test ((test test-case))
   (with-run-state (result-list)
     (bind-run-state ((current-test test))
       (labels ((abort-test (e &optional (reason (format nil "Unexpected Error: ~S~%~A." e e)))
@@ -220,20 +220,7 @@ run."))
           (setf (status test) (results-status results)
                 result-list (nconc result-list results)))))))
 
-(defgeneric %run (test-spec)
-  (:documentation "Internal method for running a test. Does not
-  update the status of the tests nor the special variables !,
-  !!, !!!"))
-
-(defmethod %run ((test test-case))
-  (when *print-names*
-    (format *test-dribble* "~% Running test ~A " (name test)))
-  (run-resolving-dependencies test))
-
-(defmethod %run ((tests list))
-  (mapc #'%run tests))
-
-(defmethod %run ((suite test-suite))
+(defmethod evaluate-test ((suite test-suite))
   (when *print-names*
     (format *test-dribble* "~%Running test suite ~A" (name suite)))
   (let ((suite-results '()))
@@ -253,6 +240,22 @@ run."))
                    (status suite) (every #'test-passed-p suite-results)))
         (with-run-state (result-list)
           (setf result-list (nconc result-list suite-results)))))))
+
+(defgeneric %run (test-spec)
+  (:documentation "Internal method for running a test. Does not
+  update the status of the tests nor the special variables !,
+  !!, !!!"))
+
+(defmethod %run ((test test-case))
+  (when *print-names*
+    (format *test-dribble* "~% Running test ~A " (name test)))
+  (run-resolving-dependencies test))
+
+(defmethod %run ((tests list))
+  (mapc #'%run tests))
+
+(defmethod %run ((suite test-suite))
+  (run-resolving-dependencies suite))
 
 (defmethod %run ((test-name symbol))
   (when-let (test (get-test test-name))

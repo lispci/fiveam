@@ -75,38 +75,89 @@
 (def-test and1 (:depends-on (and ok not-ok) :suite test-suite)
   (fail))
 
+(def-suite suite-and1 :depends-on (and ok not-ok)
+  :description "Suite version of and1 test")
+
+(def-test suite-and1-test (:suite suite-and1)
+  (fail))
+
 (def-test and2 (:depends-on (and ok) :suite test-suite)
+  (pass))
+
+(def-suite suite-and2 :depends-on (and ok)
+  :description "Suite version of and2 test")
+
+(def-test suite-and2-test (:suite suite-and2)
   (pass))
 
 (def-test dep-and ()
   (with-test-results (results and1)
     (is (= 3 (length results)))
-    ;; we should have one skippedw one failed and one passed
+    ;; we should have one skipped, one failed and one passed
+    (is (some #'test-passed-p results))
+    (is (some #'test-skipped-p results))
+    (is (some #'test-failure-p results)))
+  (with-test-results (results suite-and1)
+    (is (= 3 (length results)))
+    ;; we should have one skipped, one failed and one passed
     (is (some #'test-passed-p results))
     (is (some #'test-skipped-p results))
     (is (some #'test-failure-p results)))
   (with-test-results (results and2)
+    (is (= 2 (length results)))
+    (is (every #'test-passed-p results)))
+  (with-test-results (results suite-and2)
     (is (= 2 (length results)))
     (is (every #'test-passed-p results))))
 
 (def-test or1 (:depends-on (or ok not-ok) :suite test-suite)
   (pass))
 
+(def-suite suite-or1 :depends-on (or ok not-ok)
+  :description "Suite version of or1 test")
+
+(def-test suite-or1-test (:suite suite-or1)
+  (pass))
+
 (def-test or2 (:depends-on (or not-ok ok) :suite test-suite)
+  (pass))
+
+(def-suite suite-or2 :depends-on (or not-ok ok)
+  :description "Suite version of or2 test")
+
+(def-test suite-or2-test (:suite suite-or2)
   (pass))
 
 (def-test dep-or ()
   (with-test-results (results or1)
     (is (= 2 (length results)))
     (is (every #'test-passed-p results)))
+  (with-test-results (results suite-or1)
+    (is (= 2 (length results)))
+    (is (every #'test-passed-p results)))
   (with-test-results (results or2)
+    (is (= 3 (length results)))
+    (is (= 2 (length (remove-if-not #'test-passed-p results)))))
+  (with-test-results (results suite-or2)
     (is (= 3 (length results)))
     (is (= 2 (length (remove-if-not #'test-passed-p results))))))
 
 (def-test not1 (:depends-on (not not-ok) :suite test-suite)
   (pass))
 
+(def-suite suite-not1 :depends-on (not not-ok)
+  :description "Suite version of not1 test")
+
+(def-test suite-not1-test (:suite suite-not1)
+  (pass))
+
 (def-test not2 (:depends-on (not ok) :suite test-suite)
+  (fail))
+
+(def-suite suite-not2 :depends-on (not ok)
+  :description "Suite version of not1 test")
+
+(def-test suite-not2-test (:suite suite-not2)
   (fail))
 
 (def-test not ()
@@ -114,7 +165,15 @@
     (is (= 2 (length results)))
     (is (some #'test-passed-p results))
     (is (some #'test-failure-p results)))
+  (with-test-results (results suite-not1)
+    (is (= 2 (length results)))
+    (is (some #'test-passed-p results))
+    (is (some #'test-failure-p results)))
   (with-test-results (results not2)
+    (is (= 2 (length results)))
+    (is (some #'test-passed-p results))
+    (is (some #'test-skipped-p results)))
+  (with-test-results (results suite-not2)
     (is (= 2 (length results)))
     (is (some #'test-passed-p results))
     (is (some #'test-skipped-p results))))
@@ -129,7 +188,7 @@
     (is (= 2 (length (remove-if-not #'test-passed-p results))))
     (is (= 1 (length (remove-if-not #'test-failure-p results))))))
 
-(def-test circular-0 (:depends-on (and circular-1 circular-2 or1) 
+(def-test circular-0 (:depends-on (and circular-1 circular-2 or1)
                       :suite test-suite)
   (fail "we depend on a circular dependency, we should not be tested."))
 
@@ -184,10 +243,11 @@
 (def-test before-3 (:suite before-test-suite-2)
   (pass))
 
+
 (def-test before ()
   (with-test-results (results before-test-suite)
     (is (some #'test-skipped-p results)))
-  
+
   (with-test-results (results before-test-suite-2)
     (is (every #'test-passed-p results))))
 
