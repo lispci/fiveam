@@ -1,0 +1,49 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+
+(unless (find-package :uiop)
+  (ql:quickload :uiop :silent t))
+
+(ql:quickload :fiveam :silent t)
+
+(defun show-help ()
+  (format t "Usage: fiveam-run [options] <test cases and suites>...~%~
+             Loads the system with quicklisp then calls fiveam:run! with ~
+             a list of the rest of the arguments.~%~
+             Each test case are parsed with ~
+             read-from-string, so a list of systems can be read and ~
+             package-indentified symbols can be used~%~
+             Options~%~
+             --help|-h              - shows this help message
+             --quickload|-l <sytem> - loads the system or list of ~
+             systems~%")
+  (uiop:quit 2))
+
+(defun main (&rest argv)
+  (if (> 1 (length argv))
+    (show-help))
+  (let ((load-systems nil) (tests nil))
+    (loop :with skip = nil
+          :for arg-list :on argv
+          :for arg = (car arg-list)
+          :if (not skip)
+            :do (cond
+                  ((or (equal "--quickload" arg) (equal "-l" arg))
+                       (setf load-systems (cons (second arg-list) load-systems))
+                       (setf skip t))
+                  ((or (equal "--help" arg) (equal "-h" arg)))
+                  (t (setf tests (cons arg tests))))
+          :else
+            :do (setf skip nil))
+    (handler-case
+      (progn
+        (if load-systems
+          (ql:quickload load-systems :verbose t))
+        (uiop:quit (if (5am:run! (map 'list #'read-from-string tests))
+                       0 1)))
+      (error (ex)
+        (format t "Error occured: ~A~%" ex)
+        (uiop:quit 2)))))
