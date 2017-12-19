@@ -28,7 +28,7 @@ notifications:
     skip_join: true
 
 install:
-  - curl -L https://raw.githubusercontent.com/sionescu/cl-travis/master/install.sh | sh
+  - curl -L https://raw.githubusercontent.com/luismbo/cl-travis/master/install.sh | sh
   - cl -e "(cl:in-package :cl-user)
            (dolist (p '(:alexandria))
              (ql:quickload p :verbose t))"
