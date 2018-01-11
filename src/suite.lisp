@@ -31,17 +31,37 @@
   (:method ((suite test-suite))
     (= 0 (hash-table-count (tests suite)))))
 
-(defmacro def-suite (name &key description in)
+(defmacro def-suite (name &key description in depends-on)
   "Define a new test-suite named NAME.
 
 IN (a symbol), if provided, causes this suite te be nested in the
-suite named by IN. NB: This macro is built on top of make-suite,
+suite named by IN.
+
+DEPENDS-ON is a list of the form:
+
+ (AND . test-names) - This test is run only if all of the tests
+ in TEST-NAMES have passed, otherwise a single test-skipped
+ result is generated.
+
+ (OR . test-names) - If any of TEST-NAMES has passed this test is
+ run, otherwise a test-skipped result is generated.
+
+ (NOT test-name) - This is test is run only if TEST-NAME failed.
+
+AND, OR and NOT can be combined to produce complex dependencies.
+
+If DEPENDS-ON is a symbol it is interpreted as `(AND
+,depends-on), this is accomadate the common case of one test
+depending on another.
+
+NB: This macro is built on top of make-suite,
 as such it, like make-suite, will overrwrite any existing suite
 named NAME."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (make-suite ',name
                  ,@(when description `(:description ,description))
-                 ,@(when in `(:in ',in)))
+                 ,@(when in `(:in ',in))
+                 ,@(when depends-on `(:depends-on ',depends-on)))
      ',name))
 
 (defmacro def-suite* (name &rest def-suite-args)
@@ -49,13 +69,15 @@ named NAME."
      (def-suite ,name ,@def-suite-args)
      (in-suite ,name)))
 
-(defun make-suite (name &key description ((:in parent-suite)))
+(defun make-suite (name &key description ((:in parent-suite)) depends-on)
   "Create a new test suite object.
 
 Overrides any existing suite named NAME."
   (let ((suite (make-instance 'test-suite :name name)))
     (when description
       (setf (description suite) description))
+    (when depends-on
+      (setf (depends-on suite) depends-on))
     (when (and name
                (null (name *suite*))
                (null parent-suite))
