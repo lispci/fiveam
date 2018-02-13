@@ -13,6 +13,7 @@ env:
 
 matrix:
   allow_failures:
+    - env: LISP=allegro
     - env: LISP=cmucl
 
 notifications:
