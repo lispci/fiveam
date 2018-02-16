@@ -19,7 +19,8 @@
                (:file "test" :depends-on ("package" "fixture" "classes"))
                (:file "explain" :depends-on ("package" "utils" "check" "classes" "random"))
                (:file "suite" :depends-on ("package" "test" "classes"))
-               (:file "run" :depends-on ("package" "check" "classes" "test" "explain" "suite"))))
+               (:file "run" :depends-on ("package" "check" "classes" "test" "explain" "suite")))
+  :in-order-to ((test-op (test-op :fiveam/test))))
 
 (defsystem :fiveam/test
   :author "Edward Marco Baringer <mb@bese.it>"
@@ -27,11 +28,8 @@
   :license "BSD"
   :depends-on (:fiveam)
   :pathname "t/"
-  :components ((:file "tests")))
-
-(defmethod perform ((o test-op) (c (eql (find-system :fiveam))))
-  (load-system :fiveam/test)
-  (symbol-call :5am :run! :it.bese.fiveam))
+  :components ((:file "tests"))
+  :perform (test-op (o c) (symbol-call :5am :run! :it.bese.fiveam)))
 
 ;;;;@include "src/package.lisp"
 
