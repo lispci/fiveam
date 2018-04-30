@@ -29,7 +29,6 @@
    #:def-suite*
    #:in-suite
    #:in-suite*
-   #:make-test
    #:test
    #:def-test
    #:get-test
@@ -37,7 +36,6 @@
    #:test-names
    #:*default-test-compilation-time*
    ;; fixtures
-   #:make-fixture
    #:def-fixture
    #:with-fixture
    #:get-fixture
