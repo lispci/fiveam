@@ -1,4 +1,4 @@
-;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
+;;;; -*- Mode: LISP; Syntax: Ansi-Common-Lisp; Package: CL-USER; Base: 10; -*-
 
 ;;;; * Introduction
 
