@@ -7,8 +7,10 @@
 (def-suite test-suite :description "Suite for tests which should fail.")
 
 (defmacro with-test-results ((results test-name) &body body)
-  `(let ((,results (with-*test-dribble* nil (run ',test-name))))
-     ,@body))
+  `(handler-bind
+       ((test-spec-failure (function continue)))
+     (let ((,results (with-*test-dribble* nil (run ',test-name))))
+       ,@body)))
 
 (def-fixture null-fixture ()
   `(progn ,@(&body)))
@@ -129,7 +131,7 @@
     (is (= 2 (length (remove-if-not #'test-passed-p results))))
     (is (= 1 (length (remove-if-not #'test-failure-p results))))))
 
-(def-test circular-0 (:depends-on (and circular-1 circular-2 or1) 
+(def-test circular-0 (:depends-on (and circular-1 circular-2 or1)
                       :suite test-suite)
   (fail "we depend on a circular dependency, we should not be tested."))
 
@@ -187,7 +189,7 @@
 (def-test before ()
   (with-test-results (results before-test-suite)
     (is (some #'test-skipped-p results)))
-  
+
   (with-test-results (results before-test-suite-2)
     (is (every #'test-passed-p results))))
 
@@ -273,8 +275,25 @@
 
 (def-test return-values ()
   "Return values indicate test failures."
-  (is-true (with-*test-dribble* nil (explain! (run 'is1))))
-  (is-true (with-*test-dribble* nil (run! 'is1)))
+  (handler-bind
+      ((test-spec-failure (function continue)))
+    (is-true (with-*test-dribble* nil (explain! (run 'is1))))
+    (is-true (with-*test-dribble* nil (run! 'is1)))
 
-  (is-false (with-*test-dribble* nil (explain! (run 'is2))))
-  (is-false (with-*test-dribble* nil (run! 'is2))))
+    (is-false (with-*test-dribble* nil (explain! (run 'is2))))
+    (is-false (with-*test-dribble* nil (run! 'is2)))))
+
+(def-test signals-on-empty-test-suite ()
+  (signals test-spec-failure
+    (run ())))
+
+(def-test signals-on-failing-tests ()
+  (signals test-spec-failure
+    (run 'fail1)))
+
+(def-test does-not-signal-on-success ()
+  (is (= 0
+         (handler-case (progn (run 'is1) 0)
+           (test-spec-failure (condition)
+             (declare (ignore condition))
+             1)))))

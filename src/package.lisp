@@ -79,7 +79,8 @@
    #:*on-failure*
    #:*verbose-failures*
    #:*print-names*
-   #:results-status))
+   #:results-status
+   #:test-spec-failure))
 
 ;;;; You can use #+5am to put your test-defining code inline with your
 ;;;; other code - and not require people to have fiveam to run your
