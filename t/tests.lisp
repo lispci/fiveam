@@ -8,7 +8,9 @@
 
 (defmacro with-test-results ((results test-name) &body body)
   `(handler-bind
-       ((test-spec-failure (function continue)))
+       ((test-spec-failure (lambda (condition)
+                             (declare (ignore condition))
+                             (invoke-restart 'ignore-failure))))
      (let ((,results (with-*test-dribble* nil (run ',test-name))))
        ,@body)))
 
@@ -276,7 +278,9 @@
 (def-test return-values ()
   "Return values indicate test failures."
   (handler-bind
-      ((test-spec-failure (function continue)))
+      ((test-spec-failure (lambda (condition)
+                            (declare (ignore condition))
+                            (invoke-restart 'ignore-failure))))
     (is-true (with-*test-dribble* nil (explain! (run 'is1))))
     (is-true (with-*test-dribble* nil (run! 'is1)))
 

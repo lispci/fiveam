@@ -354,16 +354,18 @@ performed by the !, !! and !!! functions."
       (multiple-value-bind (all-pass? failed skipped)
           (results-status result-list)
         (declare (ignore failed))
-        (with-simple-restart
-            (continue "Here so FiveAM can asdf:test-system itself")
-          (cond
-            ((= (length result-list) (length skipped))
-             (signal 'test-spec-failure-no-tests
-                     :test-spec test-spec))
-            ((not all-pass?)
-             (signal 'test-spec-failure-tests-failed
-                     :test-spec test-spec
-                     :result-list result-list)))))
+        (cond
+          ((= (length result-list) (length skipped))
+           (restart-case (signal 'test-spec-failure-no-tests
+                                 :test-spec test-spec)
+             ;; here for FiveAM's test suite, where RUN is called
+             ;; from RUN
+             (ignore-failure ())))
+          ((not all-pass?)
+           (restart-case (signal 'test-spec-failure-tests-failed
+                                 :test-spec test-spec
+                                 :result-list result-list)
+             (ignore-failure ())))))
       result-list)))
 
 (defun ! ()
