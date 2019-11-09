@@ -52,6 +52,7 @@
    #:fail
    #:*test-dribble*
    #:for-all
+   #:for-all*
    #:*num-trials*
    #:*max-trials*
    #:gen-integer
