@@ -15,7 +15,9 @@ env:
 matrix:
   allow_failures:
     - env: LISP=allegro
+    - env: LISP=ccl32
     - env: LISP=cmucl
+    - env: LISP=sbcl32
 
 notifications:
   email:
