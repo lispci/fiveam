@@ -281,3 +281,10 @@
 
   (is-false (with-*test-dribble* nil (explain! (run 'is2))))
   (is-false (with-*test-dribble* nil (run! 'is2))))
+
+(def-test dont-discard-suite ()
+  (let ((*suite* (make-suite 'nil))
+        (*toplevel-suites* nil))
+    (def-suite* :one-test-suite)
+    (def-suite* :two-test-suite)
+    (is (= 2 (length *toplevel-suites*)))))
