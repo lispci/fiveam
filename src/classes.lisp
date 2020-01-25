@@ -54,7 +54,11 @@ suite) in the suite."))
   ((test-lambda :initarg :test-lambda :accessor test-lambda
                 :documentation "The function to run.")
    (runtime-package :initarg :runtime-package :accessor runtime-package
-                    :documentation "By default it stores *package* from the time this test was defined (macroexpanded)."))
+                    :documentation "By default it stores *package* from the time this test was defined (macroexpanded).")
+   (test-suite :initarg :test-suite
+               :accessor test-suite
+               :initform nil
+               :documentation "The test-suite associated with this test"))
   (:documentation "A test case is a single, named, collection of
 checks.
 

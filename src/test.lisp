@@ -130,7 +130,8 @@ If PROFILE is T profiling information will be collected as well."
                                  (:definition-time body))))
                          :description description
                          :depends-on depends-on
-                         :collect-profiling-info profile))
+                         :collect-profiling-info profile
+                         :test-suite suite))
     (setf (gethash name (tests suite)) name)))
 
 (defvar *run-test-when-defined* nil
