@@ -42,8 +42,12 @@
         (output "Failure Details:~%")
         (dolist (f (reverse failed))
           (output "--------------------------------~%")
-          (output "~A ~@{[~A]~}: ~%"
+          (output "~A ~A~@{[~A]~}: ~%"
                   (name (test-case f))
+                  (let ((suite (name (test-suite (test-case f)))))
+                    (if suite
+                        (format nil "in ~A " suite)
+                        ""))
                   (description (test-case f)))
           (output "     ~A.~%" (reason f))
           (when (for-all-test-failed-p f)
