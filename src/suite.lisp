@@ -19,7 +19,7 @@
 (defvar *suite* nil
   "The current test suite object")
 ;; Only when compiling under ASDF, not under Bazel.
-#+asdf
+#-bazel
 (net.didierverna.asdf-flv:set-file-local-variable *suite*)
 
 ;;;; ** Creating Suits
