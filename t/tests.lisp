@@ -42,6 +42,9 @@
 (def-test signals/finishes ()
   (signals error
     (error "an error"))
+  (signals (error "The form ~S is expected to signal an ~S"
+                  '(error "an error") 'error)
+    (error "an error"))
   (finishes
    (signals error
     (error "an error"))))
@@ -129,7 +132,7 @@
     (is (= 2 (length (remove-if-not #'test-passed-p results))))
     (is (= 1 (length (remove-if-not #'test-failure-p results))))))
 
-(def-test circular-0 (:depends-on (and circular-1 circular-2 or1) 
+(def-test circular-0 (:depends-on (and circular-1 circular-2 or1)
                       :suite test-suite)
   (fail "we depend on a circular dependency, we should not be tested."))
 
@@ -187,7 +190,7 @@
 (def-test before ()
   (with-test-results (results before-test-suite)
     (is (some #'test-skipped-p results)))
-  
+
   (with-test-results (results before-test-suite-2)
     (is (every #'test-passed-p results))))
 

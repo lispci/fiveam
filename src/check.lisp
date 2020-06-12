@@ -242,7 +242,7 @@ REASON-ARGS is provided, is generated based on the form of TEST:
 CONDITION. BODY is evaluated in a block named NIL, CONDITION is
 not evaluated."
   (let ((block-name (gensym)))
-    (destructuring-bind (condition &optional reason-control reason-args)
+    (destructuring-bind (condition &optional reason-control &rest reason-args)
         (ensure-list condition-spec)
       `(block ,block-name
          (handler-bind ((,condition (lambda (c)
