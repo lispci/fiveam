@@ -174,7 +174,7 @@ REASON-ARGS is provided, is generated based on the form of TEST:
           ((?predicate ?expected ?actual)
            (process-entry ?predicate ?expected ?actual)
            (setf default-reason-args
-                 (list "~2&~S~2% evaluated to ~2&~S~2% which is not ~2&~S~2% to ~2&~S~2%."
+                 (list "~2&~S~2% evaluated to ~2&~S~2% which is not ~2&~S~2% to ~2&~S~2%"
                        `',?actual a `',?predicate e)))
           ((?satisfies ?value)
            (setf bindings (list (list v ?value))

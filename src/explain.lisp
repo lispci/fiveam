@@ -45,7 +45,7 @@
           (output "~A ~@{[~A]~}: ~%"
                   (name (test-case f))
                   (description (test-case f)))
-          (output "     ~A.~%" (reason f))
+          (output "     ~A~%" (reason f))
           (when (for-all-test-failed-p f)
             (output "Results collected with failure data:~%")
             (explain exp (slot-value f 'result-list)
@@ -60,7 +60,7 @@
           (output "~A ~@{[~A]~}: ~%"
                   (name (test-case f))
                   (description (test-case f)))
-          (output "    ~A.~%" (reason f)))
+          (output "    ~A~%" (reason f)))
         (terpri stream)))))
 
 (defmethod explain ((exp simple-text-explainer) results
