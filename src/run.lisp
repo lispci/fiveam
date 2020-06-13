@@ -266,6 +266,35 @@ run."))
   (when-let (test (get-test test-name))
     (%run test)))
 
+(define-condition test-spec-failure (asdf:test-op-test-failures)
+  ((test-spec :initarg :test-spec
+              :reader  test-spec-failure-spec))
+  (:documentation
+   "Super-class of conditions signalled by RUN to indicate test failures.
+See also documentation for parent condition ASDF:TEST-OP-TEST-FAILURES"))
+
+(define-condition test-spec-failure-no-tests (test-spec-failure) ()
+  (:documentation
+   "Condition to indicate that the given test spec did not result in any tests being run.")
+  (:report
+   (lambda (condition stream)
+     (write-string "Error: no tests ran for test spec: " stream)
+     (prin1 (test-spec-failure-spec condition) stream))))
+
+(define-condition test-spec-failure-tests-failed (test-spec-failure)
+    ((result-list :initarg :result-list
+                  :reader  test-spec-failure-result-list))
+  (:documentation "Condition to indicate that the given test spec has one or more failing tests.")
+  (:report
+   (lambda (condition stream)
+     (write-string "Failing tests in test spec " stream)
+     (prin1 (test-spec-failure-spec condition) stream)
+     (terpri stream)
+     (let ((*print-names*  nil)
+           (*test-dribble* stream))
+       (explain!
+        (test-spec-failure-result-list condition))))))
+
 (defvar *initial-!* (lambda () (format t "Haven't run that many tests yet.~%")))
 
 (defvar *!* *initial-!*)
@@ -319,7 +348,29 @@ performed by the !, !! and !!! functions."
                             (format *test-dribble* "*DEBUG-ON-FAILURE* is obsolete. Use *ON-FAILURE*.")
                             :debug)
                            (t nil)))))
-    (funcall *!*)))
+    (let ((result-list (funcall *!*)))
+      (multiple-value-bind (all-pass? failed skipped)
+          (results-status result-list)
+        (cond
+          ((= (length result-list) (length skipped))
+           (restart-case (signal 'test-spec-failure-no-tests
+                                 :test-spec test-spec)
+             ;; here for FiveAM's test suite, where RUN is called
+             ;; from RUN
+             (ignore-failure ())))
+          ((not all-pass?)
+           (restart-case
+               (signal 'test-spec-failure-tests-failed
+                       :test-spec       test-spec
+                       :result-list     result-list
+                       :tests-run-count (length result-list)
+                       :failed-test-names
+                       (mapcar (lambda (test-result)
+                                 (prin1-to-string
+                                  (name (test-case test-result))))
+                          failed))
+             (ignore-failure ())))))
+      result-list)))
 
 (defun ! ()
   "Rerun the most recently run test and explain the results."
