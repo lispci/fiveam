@@ -105,34 +105,36 @@ If PROFILE is T profiling information will be collected as well."
                                  `((with-fixture ,name ,args ,@body-forms)))
                                body-forms)))
       `(progn
-         (register-test ',name ,description ',effective-body ,suite-form ',depends-on ,compile-at ,profile)
+         (register-test ',name ,description ,(make-effective-lambda name compile-at body)
+                        ,suite-form ',depends-on ,profile)
          (when *run-test-when-defined*
            (run! ',name))
          ',name))))
 
-(defun register-test (name description body suite depends-on compile-at profile)
+(defun register-test (name description test-lambda suite depends-on profile)
+  (setf (get-test name)
+        (make-instance 'test-case
+                       :name name
+                       :runtime-package (find-package (package-name *package*))
+                       :test-lambda test-lambda
+                       :description description
+                       :depends-on depends-on
+                       :collect-profiling-info profile
+                       :test-suite suite))
+  (setf (gethash name (tests suite)) name))
+
+(defun make-effective-lambda (name compile-at body)
   (let ((lambda-name
-          (format-symbol t "%~A-~A" '#:test name))
+         (format-symbol t "%~A-~A" '#:test name))
         (inner-lambda-name
-          (format-symbol t "%~A-~A" '#:inner-test name)))
-    (setf (get-test name)
-          (make-instance 'test-case
-                         :name name
-                         :runtime-package (find-package (package-name *package*))
-                         :test-lambda
-                         (eval
-                          `(named-lambda ,lambda-name ()
-                             ,@(ecase compile-at
-                                 (:run-time `((funcall
-                                               (let ((*package* (find-package ',(package-name *package*))))
-                                                 (compile ',inner-lambda-name
-                                                          '(lambda () ,@body))))))
-                                 (:definition-time body))))
-                         :description description
-                         :depends-on depends-on
-                         :collect-profiling-info profile
-                         :test-suite suite))
-    (setf (gethash name (tests suite)) name)))
+         (format-symbol t "%~A-~A" '#:inner-test name)))
+    `(named-lambda ,lambda-name ()
+       ,@(ecase compile-at
+           (:run-time `((funcall
+                         (let ((*package* (find-package ',(package-name *package*))))
+                           (compile ',inner-lambda-name
+                                    '(lambda () ,@body))))))
+           (:definition-time body)))))
 
 (defvar *run-test-when-defined* nil
   "When non-NIL tests are run as soon as they are defined.")
