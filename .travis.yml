@@ -1,18 +1,19 @@
+os: linux
 dist: bionic
-language: lisp
+language: generic
 
 env:
-  matrix:
+  jobs:
+    - LISP=sbcl
+    - LISP=ccl
+    - LISP=ecl
     - LISP=abcl
     - LISP=allegro
-    - LISP=ccl
     - LISP=ccl32
-    - LISP=ecl
-    - LISP=sbcl
     - LISP=sbcl32
     - LISP=cmucl
 
-matrix:
+jobs:
   allow_failures:
     - env: LISP=allegro
     - env: LISP=ccl32
@@ -33,15 +34,10 @@ notifications:
 
 install:
   - curl -L https://raw.githubusercontent.com/sionescu/cl-travis/master/install.sh | sh
-  - cl -e "(cl:in-package :cl-user)
-           (dolist (p '(:alexandria))
-             (ql:quickload p :verbose t))"
 
 script:
-  - cl -e "(cl:in-package :cl-user)
+  - cl -e "(prin1 (lisp-implementation-type)) (terpri) (prin1 (lisp-implementation-version)) (terpri)
            (ql:quickload :fiveam/test :verbose t)
            (uiop:quit (if (some (lambda (x) (typep x '5am::test-failure))
                                 (5am:run :it.bese.fiveam))
                           1 0))"
-
-sudo: required
