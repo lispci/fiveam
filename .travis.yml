@@ -33,7 +33,7 @@ notifications:
     skip_join: true
 
 install:
-  - curl -L https://raw.githubusercontent.com/sionescu/cl-travis/master/install.sh | sh
+  - curl -L https://raw.githubusercontent.com/lispci/cl-travis/master/install.sh | sh
 
 script:
   - cl -e "(prin1 (lisp-implementation-type)) (terpri) (prin1 (lisp-implementation-version)) (terpri)
