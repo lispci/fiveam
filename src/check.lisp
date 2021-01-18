@@ -196,9 +196,7 @@ REASON-ARGS is provided, is generated based on the form of TEST:
 
 (defmacro skip (&rest reason)
   "Generates a TEST-SKIPPED result."
-  `(progn
-     (format *test-dribble* "s")
-     (add-result 'test-skipped :reason (format nil ,@reason))))
+  `(add-result 'test-skipped :reason (format nil ,@reason)))
 
 (defmacro is-every (predicate &body clauses)
   "The input is either a list of lists, or a list of pairs. Generates (is (,predicate ,expr ,value))
