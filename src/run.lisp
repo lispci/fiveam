@@ -203,7 +203,8 @@ run."))
                              (let ((*readtable* (copy-readtable))
                                    (*package* (runtime-package test)))
                                (when *print-names*
-                                   (format *test-dribble* "~%~ARunning test ~A " *test-dribble-indent* (name test)))
+                                   (format *test-dribble* "~%~ARunning test ~A " *test-dribble-indent* (name test))
+                                   (force-output *test-dribble*))
                                (if (collect-profiling-info test)
                                    ;; Timing info doesn't get collected ATM, we need a portable library
                                    ;; (setf (profiling-info test) (collect-timing (test-lambda test)))
@@ -241,7 +242,8 @@ run."))
 
 (defmethod %run ((suite test-suite))
   (when *print-names*
-    (format *test-dribble* "~%~ARunning test suite ~A" *test-dribble-indent* (name suite)))
+    (format *test-dribble* "~%~ARunning test suite ~A" *test-dribble-indent* (name suite))
+    (force-output *test-dribble*))
   (let ((suite-results '()))
     (flet ((run-tests ()
              (loop
