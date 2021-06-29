@@ -274,10 +274,11 @@ run."))
 
 ;;;; ** Public entry points
 
-(defun run! (&optional (test-spec *suite*)
-             &key ((:print-names *print-names*) *print-names*))
-  "Equivalent to (explain! (run TEST-SPEC))."
-  (explain! (run test-spec)))
+(locally (declare #+sbcl (sb-ext:muffle-conditions sb-kernel:&optional-and-&key-in-lambda-list))
+  (defun run! (&optional (test-spec *suite*)
+               &key ((:print-names *print-names*) *print-names*))
+    "Equivalent to (explain! (run TEST-SPEC))."
+    (explain! (run test-spec))))
 
 (defun explain! (result-list)
   "Explain the results of RESULT-LIST using a
