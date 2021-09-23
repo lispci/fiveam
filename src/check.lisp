@@ -258,6 +258,35 @@ not evaluated."
                  `("Failed to signal a ~S" ',condition)))
          (return-from ,block-name nil)))))
 
+(defmacro warns (condition-spec &body body)
+  "Generates a pass if BODY signals a warning of type CONDITION-SPEC. BODY
+is evaluated in a block named NIL, CONDITION-SPEC is not evaluated.
+  Is like SIGNALS, but does NOT abort the execution of BODY upon the signal
+being raised."
+  (let ((block-name (gensym))
+        (signaled-p (gensym)))
+    (destructuring-bind (condition &optional reason-control reason-args)
+        (ensure-list condition-spec)
+      `(let ((,signaled-p nil))
+         (block ,block-name
+           (handler-bind ((,condition (lambda (c)
+                                        (unless (typep c 'warning)
+                                          (error "Cannot use FiveAM \"warns\" check for non-warning conditions."))
+                                        ;; ok, body threw condition
+                                        (add-result 'test-passed
+                                                    :test-expr ',condition)
+                                        (setf ,signaled-p t)
+                                        (muffle-warning c))))
+             (block nil
+               ,@body))
+           (when ,signaled-p (return-from ,block-name t))
+           (process-failure
+            ',condition
+            ,@(if reason-control
+                  `(,reason-control ,@reason-args)
+                  `("Failed to signal a ~S" ',condition)))
+           (return-from ,block-name nil))))))
+
 (defmacro finishes (&body body)
   "Generates a pass if BODY executes to normal completion. In
 other words if body does signal, return-from or throw this test

@@ -49,6 +49,29 @@
    (signals error
     (error "an error"))))
 
+(def-test no-warn (:suite test-suite :fixture null-fixture)
+  (warns warning
+    (plusp 1)))
+
+
+(def-test warns ()
+  (warns warning
+    (warn "This is a warning."))
+  (let ((foo 1))
+    (warns warning
+        (warn "this is a warning; it doesn't stop its code block from completing.")
+        (setf foo 2))
+    (is (= 2 foo) "Foo did not get updated: WARNS check not working."))
+  ;; showing how signals behaves differently
+  (let ((foo 1))
+    (signals warning
+        (warn "this is a warning; in the SIGNALS context it aborts its code block.")
+        (setf foo 2))
+    (is (= 1 foo) "Foo got updated: SIGNALS check not working as expected."))
+  (with-test-results (results no-warn)
+    (is (= 1 (length results)))
+    (is-true (test-failure-p (first results)))))
+
 (def-test pass ()
   (pass))
 
