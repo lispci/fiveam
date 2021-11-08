@@ -38,6 +38,12 @@
 
 (declaim (type on-problem-action *on-error* *on-failure*))
 
+(defvar *on-warning* nil
+   "The action to perform on warning:
+- :DEBUG if we should drop into the debugger
+- :BACKTRACE to print a backtrace
+- NIL to simply continue")
+
 (defvar *on-error* nil
   "The action to perform on error:
 - :DEBUG if we should drop into the debugger
@@ -190,6 +196,17 @@ run."))
                                                          *test-dribble*))
                                                       (invoke-restart
                                                        (find-restart 'ignore-failure))))))
+                                  (warning (lambda (c)
+                                             (ecase *on-warning*
+                                               (:debug (invoke-debugger c))
+                                               (:backtrace
+                                                (format t "~&WARNING: ~a~%" c)
+                                                (trivial-backtrace:print-backtrace-to-stream
+                                                 *test-dribble*)
+                                                (continue c))
+                                               ((nil)
+                                                (format t "~&WARNING: ~a~%" c)
+                                                (continue c)))))
                                   (error (lambda (e)
                                            (unless (or (eql *on-error* :debug)
                                                        (typep e 'check-failure))
