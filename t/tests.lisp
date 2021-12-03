@@ -289,7 +289,7 @@
     (def-suite* :two-test-suite)
     (is (= 2 (length *toplevel-suites*)))))
 
-(defparameter *this-file* (or *compile-file-truename* *load-truename*))
+(defparameter *this-file* (asdf:system-relative-pathname "fiveam" "t/tests.lisp"))
 
 #+allegro
 (def-test check-source-recording ()
