@@ -288,3 +288,23 @@
     (def-suite* :one-test-suite)
     (def-suite* :two-test-suite)
     (is (= 2 (length *toplevel-suites*)))))
+
+(defparameter *this-file* (or *compile-file-truename* *load-truename*))
+
+#+allegro
+(def-test check-source-recording ()
+  (is (equalp *this-file* (excl:source-file 'dont-discard-suite :fiveam-test)))
+  (is (equalp *this-file* (excl:source-file 'test-suite :fiveam-suite)))
+  (is (equalp *this-file* (excl:source-file 'null-fixture :fiveam-fixture))))
+
+#+ccl
+(def-test check-source-recording ()
+  (flet ((source-file (obj type)
+           (translate-logical-pathname
+            (ccl::source-note-filename
+             (second
+              (first
+               (ccl:find-definition-sources obj type)))))))
+    (is (equalp *this-file* (source-file 'dont-discard-suite :fiveam-test)))
+    (is (equalp *this-file* (source-file 'test-suite :fiveam-suite)))
+    (is (equalp *this-file* (source-file 'null-fixture :fiveam-fixture)))))
