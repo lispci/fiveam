@@ -13,22 +13,30 @@
 
 (declaim (special *suite*))
 
+(defclass test-bundle ()
+  ((names :initform ()
+          :accessor %test-names)
+   (tests :initform (make-hash-table :test 'eql)
+          :accessor %tests)))
+
 (defvar *test*
-  (make-hash-table :test 'eql)
+  (make-instance 'test-bundle)
   "Lookup table mapping test (and test suite)
   names to objects.")
 
 (defun get-test (key &optional default)
-  (gethash key *test* default))
+  (gethash key (%tests *test*) default))
 
 (defun (setf get-test) (value key)
-  (setf (gethash key *test*) value))
+  (push key (%test-names *test*))
+  (setf (gethash key (%tests *test*)) value))
 
 (defun rem-test (key)
-  (remhash key *test*))
+  (deletef (%test-names *test*) key)
+  (remhash key (%tests *test*)))
 
 (defun test-names ()
-  (hash-table-keys *test*))
+  (reverse (%test-names *test*)))
 
 (defmacro test (name &body body)
   "Create a test named NAME. If NAME is a list it must be of the
@@ -132,7 +140,8 @@ If PROFILE is T profiling information will be collected as well."
                          :depends-on depends-on
                          :collect-profiling-info profile
                          :test-suite suite))
-    (setf (gethash name (tests suite)) name)))
+    (let ((*test* (tests suite)))
+      (setf (get-test name) name))))
 
 (defvar *run-test-when-defined* nil
   "When non-NIL tests are run as soon as they are defined.")
