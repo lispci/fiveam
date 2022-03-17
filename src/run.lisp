@@ -278,7 +278,9 @@ run."))
 
 ;;;; ** Public entry points
 
-#+sbcl
+#+#.(cl:if (cl:ignore-errors
+            (cl:find-symbol "&OPTIONAL-AND-&KEY-IN-LAMBDA-LIST" "SB-KERNEL"))
+           '(and) '(or))
 (declaim (sb-ext:muffle-conditions sb-kernel:&optional-and-&key-in-lambda-list))
 
 (defun run! (&optional (test-spec *suite*)
