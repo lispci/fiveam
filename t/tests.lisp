@@ -265,6 +265,11 @@
     (is (= 2 (length s)))
     (is (every (curry #'char= #\Null) s))))
 
+(def-test for-all* ()
+  (for-all* ((a (gen-integer))
+             (b (gen-integer :min a :max (+ a 10))))
+    (is (<= a b))))
+
 (defun dummy-mv-generator ()
   (lambda ()
     (list 1 1)))
@@ -273,6 +278,18 @@
   (for-all (((a b) (dummy-mv-generator)))
     (is (= 1 a))
     (is (= 1 b))))
+
+(defun dummy-mv-generator* (val)
+  (lambda ()
+    (list val (1+ val))))
+
+(def-test for-all*-destructuring-bind ()
+  (for-all* (((a b) (dummy-mv-generator* 1))
+             ((c d) (dummy-mv-generator* (1+ b))))
+    (is (= 1 a))
+    (is (= 2 b))
+    (is (= 3 c))
+    (is (= 4 d))))
 
 (def-test return-values ()
   "Return values indicate test failures."

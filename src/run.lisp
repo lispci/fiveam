@@ -203,7 +203,8 @@ run."))
                              (let ((*readtable* (copy-readtable))
                                    (*package* (runtime-package test)))
                                (when *print-names*
-                                   (format *test-dribble* "~%~ARunning test ~A " *test-dribble-indent* (name test)))
+                                   (format *test-dribble* "~%~ARunning test ~A " *test-dribble-indent* (name test))
+                                   (force-output *test-dribble*))
                                (if (collect-profiling-info test)
                                    ;; Timing info doesn't get collected ATM, we need a portable library
                                    ;; (setf (profiling-info test) (collect-timing (test-lambda test)))
@@ -216,11 +217,13 @@ run."))
                              (return-from run-it result-list)))
                        (retest ()
                          :report (lambda (stream)
-                                   (format stream "~@<Rerun the test ~S~@:>" test))
+                                   #-genera (format stream "~@<Rerun the test ~S~@:>" test)
+                                   #+genera (format stream "Rerun the test ~S" test))
                          (return-from run-it (run-it)))
                        (ignore ()
                          :report (lambda (stream)
-                                   (format stream "~@<Signal an exceptional test failure and abort the test ~S.~@:>" test))
+                                   #-genera (format stream "~@<Signal an exceptional test failure and abort the test ~S.~@:>" test)
+                                   #+genera (format stream "Signal an exceptional test failure and abort the test ~S." test))
                          (abort-test (make-instance 'test-failure :test-case test
                                                                   :reason "Failure restart."))))
                      result-list))))
@@ -241,12 +244,13 @@ run."))
 
 (defmethod %run ((suite test-suite))
   (when *print-names*
-    (format *test-dribble* "~%~ARunning test suite ~A" *test-dribble-indent* (name suite)))
+    (format *test-dribble* "~%~ARunning test suite ~A" *test-dribble-indent* (name suite))
+    (force-output *test-dribble*))
   (let ((suite-results '()))
     (flet ((run-tests ()
              (loop
-                for test being the hash-values of (tests suite)
-                do (%run test))))
+                :for test :in (reverse (%test-names (tests suite)))
+                :do (%run test))))
       (vector-push-extend #\space *test-dribble-indent*)
       (unwind-protect
            (bind-run-state ((result-list '()))
@@ -274,6 +278,11 @@ run."))
 
 ;;;; ** Public entry points
 
+#+#.(cl:if (cl:ignore-errors
+            (cl:find-symbol "&OPTIONAL-AND-&KEY-IN-LAMBDA-LIST" "SB-KERNEL"))
+           '(and) '(or))
+(declaim (sb-ext:muffle-conditions sb-kernel:&optional-and-&key-in-lambda-list))
+
 (defun run! (&optional (test-spec *suite*)
              &key ((:print-names *print-names*) *print-names*))
   "Equivalent to (explain! (run TEST-SPEC))."
@@ -299,7 +308,7 @@ TEST-SPEC can be either a symbol naming a test or test suite, or
 a testable-object object. This function changes the operations
 performed by the !, !! and !!! functions."
   (psetf *!* (lambda ()
-               (loop :for test :being :the :hash-keys :of *test*
+               (loop :for test :in (test-names)
                      :do (setf (status (get-test test)) :unknown))
                (bind-run-state ((result-list '()))
                  (with-simple-restart (explain "Ignore the rest of the tests and explain current results")

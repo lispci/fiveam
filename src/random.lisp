@@ -77,6 +77,45 @@ Examples:
               (throw 'run-once
                 (list :guard-conditions-failed))))))))
 
+(defmacro dbind-rec (bindings &body body)
+  (let* ((binding (first bindings))
+         (dbind-ll (first binding))
+         (dbind-sp (second binding))
+         (body-form (if (null (rest bindings))
+                        `(progn ,@body)
+                        `(dbind-rec ,(rest bindings) ,@body)))
+         (bind-form (if (atom dbind-ll)
+                        `(let ((,dbind-ll (funcall ,dbind-sp)))
+                           ,body-form)
+                        `(destructuring-bind ,dbind-ll
+                             (funcall ,dbind-sp)
+                           ,body-form))))
+    (if (null bindings)
+        body-form
+        bind-form)))
+
+(defmacro for-all* (bindings &body body)
+  "Bind BINDINGS to random variables and test BODY *num-trials* times.
+
+Works like FOR-ALL but variables are defined sequentially - subsequent
+generator bindings may use value of a previous generator.
+
+Example:
+
+  (for-all* ((a (gen-integer))
+             (b (gen-integer :min a :max (+ a 20)))
+    (is (<= a b)))"
+  (with-gensyms (test-lambda-args)
+    `(perform-random-testing
+      nil
+      (lambda (,test-lambda-args)
+        (declare (ignore ,test-lambda-args))
+        (dbind-rec ,bindings
+          (if (and ,@(delete-if #'null (mapcar #'third bindings)))
+              (progn ,@body)
+              (throw 'run-once
+                (list :guard-conditions-failed))))))))
+
 ;;;; *** Implementation
 
 ;;;; We could just make FOR-ALL a monster macro, but having FOR-ALL be

@@ -32,8 +32,18 @@
   (print-unreadable-object (test stream :type t :identity t)
     (format stream "~S" (name test))))
 
+(defclass test-bundle ()
+  ((names :initform ()
+          :accessor %test-names)
+   (tests :initform (make-hash-table :test 'eql)
+          :accessor %tests)))
+
+(defmethod print-object ((bundle test-bundle) stream)
+  (print-unreadable-object (bundle stream :type t :identity t)
+    (format stream "~S tests" (hash-table-count (%tests bundle)))))
+
 (defclass test-suite (testable-object)
-  ((tests :accessor tests :initform (make-hash-table :test 'eql)
+  ((tests :accessor tests :initform (make-instance 'test-bundle)
           :documentation "The hash table mapping names to test
 	  objects in this suite. The values in this hash table
 	  can be either test-cases or other test-suites."))

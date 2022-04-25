@@ -31,7 +31,7 @@
   (:method ((suite symbol))
     (suite-emptyp (get-test suite)))
   (:method ((suite test-suite))
-    (= 0 (hash-table-count (tests suite)))))
+    (zerop (hash-table-count (%tests (tests suite))))))
 
 (defmacro def-suite (name &key description in)
   "Define a new test-suite named NAME.
@@ -68,7 +68,8 @@ Overrides any existing suite named NAME."
                  (cerror "Create a new suite named ~A." "Unknown suite ~A." i)
                  (setf (get-test in-suite) (make-suite i)
                        in-suite (get-test in-suite)))
-               (setf (gethash name (tests in-suite)) suite)))
+               (let ((*test* (tests in-suite)))
+                 (setf (get-test name) suite))))
     (setf (get-test name) suite)
     suite))
 
