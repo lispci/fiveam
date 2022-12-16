@@ -8,7 +8,8 @@
   :version (:read-file-form "version.sexp")
   :description "A simple regression testing framework"
   :license "BSD"
-  :depends-on (:alexandria :net.didierverna.asdf-flv  :trivial-backtrace)
+  :depends-on (:alexandria :net.didierverna.asdf-flv  :trivial-backtrace
+                           :trivia)
   :pathname "src/"
   :components ((:file "package")
                (:file "utils" :depends-on ("package"))
