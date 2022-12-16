@@ -31,6 +31,28 @@
   (is-true nil)
   (is-false t))
 
+(def-test is-set-equal (:suite test-suite)
+  (is (set-equal '(a b c) '(b c a)))
+  ;; parsing the modifiers correctly?
+  (is (set-equal '(a b c) '(b c a) :test 'eq))
+  (is-false (set-equal '("a" "b" "c") '("b" "c" "a") :test 'eq))
+  (is (set-equal '("a" "b" "c") '("b" "c" "a") :test 'string-equal))
+  (is-false (set-equal '((a b c)) '((b c a)) :test 'equalp))
+  ;; two permuted sets
+  (let ((ps1
+          '((B A D C) (A B D C) (D B A C) (B D A C) (A D B C) (D A B C) (C A D B)
+            (A C D B) (D C A B) (C D A B) (A D C B) (D A C B) (C B D A) (B C D A)
+            (D C B A) (C D B A) (B D C A) (D B C A) (C B A D) (B C A D) (A C B D)
+            (C A B D) (B A C D) (A B C D)))
+        (ps2
+          '((B A D C) (D B A C) (A B D C) (B D A C) (A D B C) (D A B C) (C A D B)
+            (A C D B) (D C A B) (C D A B) (A D C B) (D A C B) (C B D A) (B C D A)
+            (D C B A) (C D B A) (B D C A) (D B C A) (C B A D) (B C A D) (A C B D)
+            (C A B D) (B A C D) (A B C D))))
+    (is-false (equalp ps1 ps2))
+    (is-false (set-equal ps1 ps2))
+    (is (set-equal ps1 ps2 :test 'equalp))))
+
 (def-test is (:profile t)
   (with-test-results (results is1)
     (is (= 6 (length results)))
