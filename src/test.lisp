@@ -13,12 +13,6 @@
 
 (declaim (special *suite*))
 
-(defclass test-bundle ()
-  ((names :initform ()
-          :accessor %test-names)
-   (tests :initform (make-hash-table :test 'eql)
-          :accessor %tests)))
-
 (defvar *test*
   (make-instance 'test-bundle)
   "Lookup table mapping test (and test suite)
