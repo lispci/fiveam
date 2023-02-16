@@ -6,7 +6,7 @@
 
 ;;;; When running tests we often need to setup some kind of context
 ;;;; (create dummy db connections, simulate an http request,
-;;;; etc.). Fixtures provide a way to conviently hide this context
+;;;; etc.). Fixtures provide a way to conveniently hide this context
 ;;;; into a macro and allow the test to focus on testing.
 
 ;;;; NB: A FiveAM fixture is nothing more than a macro. Since the term
