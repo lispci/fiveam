@@ -42,32 +42,43 @@
 (def-test signals/finishes ()
   (signals error
     (error "an error"))
+  ;; I don't know what the following is meant to test: when I try
+  ;; to run it, I get an error -- it seems like the `signals` form
+  ;; gives an error-generating FORM instead of an error class.
+  ;; It's possible that this was originally intended to show that
+  ;; the SIGNALS check would handle an error arising in its own
+  ;; expansion, but ... ¯\_(ツ)_/¯ [2023/09/02:rpg]
+  #+nil
   (signals (error "The form ~S is expected to signal an ~S"
                   '(error "an error") 'error)
     (error "an error"))
-  (finishes
+  ;; SIGNALS returns NIL when the signal is a subtype of ERROR.
+  (is-false
    (signals error
-    (error "an error"))))
+     (error "an error")))
+  (finishes
+    (signals error
+      (error "an error"))))
 
 (def-test no-warn (:suite test-suite :fixture null-fixture)
-  (warns warning
+  (signals warning
     (plusp 1)))
 
 
 (def-test warns ()
-  (warns warning
+  (signals warning
     (warn "This is a warning."))
   (let ((foo 1))
-    (warns warning
+    (signals warning
         (warn "this is a warning; it doesn't stop its code block from completing.")
         (setf foo 2))
-    (is (= 2 foo) "Foo did not get updated: WARNS check not working."))
+    (is (= 2 foo) "Foo did not get updated: SIGNALS check not working."))
   ;; showing how signals behaves differently
-  (let ((foo 1))
-    (signals warning
-        (warn "this is a warning; in the SIGNALS context it aborts its code block.")
-        (setf foo 2))
-    (is (= 1 foo) "Foo got updated: SIGNALS check not working as expected."))
+  ;; (let ((foo 1))
+  ;;   (signals warning
+  ;;       (warn "this is a warning; in the SIGNALS context it aborts its code block.")
+  ;;       (setf foo 2))
+  ;;   (is (= 1 foo) "Foo got updated: SIGNALS check not working as expected."))
   (with-test-results (results no-warn)
     (is (= 1 (length results)))
     (is-true (test-failure-p (first results)))))

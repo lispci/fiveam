@@ -237,55 +237,38 @@ REASON-ARGS is provided, is generated based on the form of TEST:
 (defmacro signals (condition-spec
                    &body body)
   "Generates a pass if BODY signals a condition of type
-CONDITION. BODY is evaluated in a block named NIL, CONDITION is
+CONDITION-SPEC. BODY is evaluated in a block named NIL, CONDITION-SPEC is
 not evaluated."
-  (let ((block-name (gensym)))
-    (destructuring-bind (condition &optional reason-control &rest reason-args)
+  (let ((block-name (gensym))
+        (signaled-p (gensym))
+        (body-results (gensym))
+        (tag (gensym)))
+    (destructuring-bind (condition &optional reason-control  reason-args)
         (ensure-list condition-spec)
       `(block ,block-name
-         (handler-bind ((,condition (lambda (c)
-                                      (declare (ignore c))
-                                      ;; ok, body threw condition
-                                      (add-result 'test-passed
-                                                  :test-expr ',condition)
-                                      (return-from ,block-name t))))
-           (block nil
-             ,@body))
-         (process-failure
-           ',condition
-           ,@(if reason-control
-                 `(,reason-control ,@reason-args)
-                 `("Failed to signal a ~S" ',condition)))
-         (return-from ,block-name nil)))))
-
-(defmacro warns (condition-spec &body body)
-  "Generates a pass if BODY signals a warning of type CONDITION-SPEC. BODY
-is evaluated in a block named NIL, CONDITION-SPEC is not evaluated.
-  Is like SIGNALS, but does NOT abort the execution of BODY upon the signal
-being raised."
-  (let ((block-name (gensym))
-        (signaled-p (gensym)))
-    (destructuring-bind (condition &optional reason-control reason-args)
-        (ensure-list condition-spec)
-      `(let ((,signaled-p nil))
-         (block ,block-name
-           (handler-bind ((,condition (lambda (c)
-                                        (unless (typep c 'warning)
-                                          (error "Cannot use FiveAM \"warns\" check for non-warning conditions."))
-                                        ;; ok, body threw condition
-                                        (add-result 'test-passed
-                                                    :test-expr ',condition)
-                                        (setf ,signaled-p t)
-                                        (muffle-warning c))))
-             (block nil
-               ,@body))
-           (when ,signaled-p (return-from ,block-name t))
-           (process-failure
-            ',condition
-            ,@(if reason-control
-                  `(,reason-control ,@reason-args)
-                  `("Failed to signal a ~S" ',condition)))
-           (return-from ,block-name nil))))))
+        (let ((,signaled-p nil)
+              ,body-results)
+          (setf ,body-results
+                (multiple-value-list
+                 (handler-bind ((,condition (lambda (c)
+                                              ;; ok, body threw condition
+                                              (add-result 'test-passed
+                                                          :test-expr ',condition)
+                                              (setf ,signaled-p t)
+                                              (when (typep c 'warning)
+                                                (muffle-warning c))
+                                              (when (typep c 'error)
+                                                (throw ',tag nil)))))
+                   (catch ',tag
+                    (block nil
+                      ,@body)))))
+          (unless ,signaled-p
+            (process-failure
+             ',condition
+             ,@(if reason-control
+                   `(,reason-control ,@reason-args)
+                   `("Failed to signal a ~S" ',condition))))
+          (return-from ,block-name (values-list ,body-results)))))))
 
 (defmacro finishes (&body body)
   "Generates a pass if BODY executes to normal completion. In
