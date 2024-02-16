@@ -22,7 +22,7 @@
   (gethash key (%tests *test*) default))
 
 (defun (setf get-test) (value key)
-  (push key (%test-names *test*))
+  (pushnew key (%test-names *test*))
   (setf (gethash key (%tests *test*)) value))
 
 (defun rem-test (key)
