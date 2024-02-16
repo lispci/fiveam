@@ -11,14 +11,15 @@
   :depends-on (:alexandria :net.didierverna.asdf-flv  :trivial-backtrace)
   :pathname "src/"
   :components ((:file "package")
+               (:file "record-source-file" :depends-on ("package"))
                (:file "utils" :depends-on ("package"))
                (:file "check" :depends-on ("package" "utils"))
-               (:file "fixture" :depends-on ("package"))
+               (:file "fixture" :depends-on ("package" "record-source-file"))
                (:file "classes" :depends-on ("package"))
                (:file "random" :depends-on ("package" "check"))
-               (:file "test" :depends-on ("package" "fixture" "classes"))
+               (:file "test" :depends-on ("package" "fixture" "classes" "record-source-file"))
                (:file "explain" :depends-on ("package" "utils" "check" "classes" "random"))
-               (:file "suite" :depends-on ("package" "test" "classes"))
+               (:file "suite" :depends-on ("package" "test" "classes" "record-source-file"))
                (:file "run" :depends-on ("package" "check" "classes" "test" "explain" "suite")))
   :in-order-to ((test-op (test-op :fiveam/test))))
 
