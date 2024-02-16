@@ -22,6 +22,8 @@
   (:nicknames :5am :fiveam)
   #+sb-package-locks
   (:lock t)
+  (:import-from #:anaphora
+                #:aif #:acond #:it)
   (:export
    ;; creating tests and test-suites
    #:make-suite
