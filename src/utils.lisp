@@ -129,6 +129,7 @@ ELSE will be executed."
       (find-vars match-spec))
     (delete-duplicates vars)))
 
+#|
 (defmacro list-match-case (target &body clauses)
   (if clauses
       (destructuring-bind ((test &rest progn) &rest others)
@@ -146,6 +147,34 @@ ELSE will be executed."
                      ,@progn)
                    (list-match-case ,tgt ,@others))))))
       nil))
+|#
+
+(defun list-match-pattern->trivia (pattern)
+  (cond ((symbolp pattern)
+         ;; must be a variable that matches the entire list
+         (or (varsymp pattern) (error "Cannot match a list against a single constant: ~s" pattern))
+         (let ((varname (string-trim (list #\?) (symbol-name pattern))))
+           ;; to avoid unreferenced variables warnings, treat _-prefixed variables specially.
+           (if (eql (char varname 0) #\_)
+               '(list* _)
+               `(list* ,pattern))))
+        ((eq (first pattern) 'not)
+         (or (= (length pattern) 2) (error "Ill-formed list-match pattern ~s" pattern))
+         `(list 'not ,(list-match-pattern->trivia (second pattern))
+           ))
+        (t
+         (if (proper-list-p pattern)
+             `(list ,@pattern)
+             (let ((final-var (cdr (last pattern)))
+                   ;; everything but the final variable will be in the following
+                   (other (reverse (reverse pattern))))
+               `(list* ,@other ,final-var))))))
+
+(defmacro list-match-case (target &body clauses)
+  `(trivia:match ,target
+     ,@(loop :for (pattern . code) :in clauses
+             :collecting (cons (list-match-pattern->trivia pattern)
+                               code))))
 
 ;;;; * def-special-environment
 
