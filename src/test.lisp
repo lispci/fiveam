@@ -107,10 +107,11 @@ If PROFILE is T profiling information will be collected as well."
                                  `((with-fixture ,name ,args ,@body-forms)))
                                body-forms)))
       `(progn
-         (register-test ',name ,description ',effective-body ,suite-form ',depends-on ,compile-at ,profile)
-         (when *run-test-when-defined*
-           (run! ',name))
-         ',name))))
+           (record-source-file ,name :fiveam-test)
+           (register-test ',name ,description ',effective-body ,suite-form ',depends-on ,compile-at ,profile)
+           (when *run-test-when-defined*
+             (run! ',name))
+           ',name))))
 
 (defun register-test (name description body suite depends-on compile-at profile)
   (let ((lambda-name
