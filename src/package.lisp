@@ -46,6 +46,7 @@
    #:is-true
    #:is-false
    #:signals
+   #:warns
    #:finishes
    #:skip
    #:pass
