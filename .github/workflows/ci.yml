@@ -18,7 +18,7 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     container:
-      image: containers.common-lisp.net/cl-docker-images/${{matrix.l}}:${{matrix.IMAGE_TAG}}
+      image: ${{matrix.PREFIX}}/${{matrix.l}}:${{matrix.IMAGE_TAG}}
 
     strategy:
       matrix:
@@ -26,16 +26,35 @@ jobs:
         # just going to try to get ONE lisp to work first
         # can't run CMUCL on GitHub actions.
         # ccl's ASDF seems to be having trouble with source initialization 
-        l: [abcl, allegro, clisp, ecl, sbcl] # ccl, cmucl (probably not the last).
+        l: [abcl, allegro11express, clisp, ecl, ccl, sbcl] # ccl, cmucl (probably not the last).
         IMAGE_TAG: [latest]
+        PREFIX:
+          - containers.common-lisp.net/cl-docker-images
+          - docker.io/rpgoldman
+        exclude:
+          - l: allegro11express
+            PREFIX: containers.common-lisp.net/cl-docker-images
+          - l: sbcl
+            PREFIX: containers.common-lisp.net/cl-docker-images
+          - l: ccl
+            PREFIX: containers.common-lisp.net/cl-docker-images
+          - l: abcl
+            PREFIX: containers.common-lisp.net/cl-docker-images            
+          - l: clisp
+            PREFIX: docker.io/rpgoldman   
+          - l: ecl
+            PREFIX: docker.io/rpgoldman             
         include:
           - l: clasp
             IMAGE_TAG: "b14e329f49998275579926da2a737885ceb2cea7"
-          - l: allegro
+            PREFIX: containers.common-lisp.net/cl-docker-images
+          - l: allegro11express
             IMAGE_TAG: latest
             variant: modern
+            PREFIX: docker.io/rpgoldman
           - l: abcl
             IMAGE_TAG: 1.7.1-jdk8 # FIXME: this is likely obsolete
+            PREFIX: containers.common-lisp.net/cl-docker-images
 
     env:
       GITHUB_ACTION: true
