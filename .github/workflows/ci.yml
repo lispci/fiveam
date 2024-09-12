@@ -90,14 +90,20 @@ jobs:
       continue-on-error: true
 
     - name: save build output
-      uses: actions/upload-artifact@v3
+      id: save-build-output
+      uses: actions/upload-artifact@v4
       with:
         name: ${{matrix.l}}-${{matrix.IMAGE_TAG}}-build-output.text
         path: build/results/${{matrix.l}}-load.text
 
+    - name: return build output id
+      run: |
+        echo 'Artifact ID is ${{ steps.save-build-output.outputs.artifact-id }}'
+
     - name: build fail
       if: ${{ steps.test-build.outcome == 'failure'}}
-      run: false
+      run: 
+        /usr/bin/false
 
     - name: tests
       shell: bash
