@@ -83,15 +83,21 @@ jobs:
 
     - name: test build
       shell: bash
+      id: test-build
       run: |
         ./run-tests.sh -c ${{ matrix.l }} || ${{ matrix.l == 'clisp' }}
         # no idea how to get FiveAM to build clean on clisp
+      continue-on-error: true
 
     - name: save build output
       uses: actions/upload-artifact@v3
       with:
         name: ${{matrix.l}}-${{matrix.IMAGE_TAG}}-build-output.text
         path: build/results/${{matrix.l}}-load.text
+
+    - name: build fail
+      if: ${{ steps.test-build.outcome == 'failure'}}
+      run: false
 
     - name: tests
       shell: bash
