@@ -64,6 +64,22 @@ If PROFILE is T profiling information will be collected as well."
       (ensure-list name)
     `(def-test ,name (,@args) ,@body)))
 
+#+lispworks
+(dspec:define-dspec-class def-test nil
+  "A fiveam test")
+
+#+lispworks
+(dspec:define-form-parser def-test (name &rest rest)
+  `(def-test ,name))
+
+#+lispworks
+(dspec:define-form-parser
+  (def-test (:parser def-test-form-parser)))
+
+#+lispworks
+(dspec:define-form-parser
+  (test (:parser def-test-form-parser)))
+
 (defvar *default-test-compilation-time* :definition-time)
 
 (defmacro def-test (name (&key depends-on (suite '*suite* suite-p) fixture
@@ -107,6 +123,9 @@ If PROFILE is T profiling information will be collected as well."
                                  `((with-fixture ,name ,args ,@body-forms)))
                                body-forms)))
       `(progn
+         #+lispworks
+         (dspec:record-definition `(def-test ,',name) (dspec:location))
+
          (register-test ',name ,description ',effective-body ,suite-form ',depends-on ,compile-at ,profile)
          (when *run-test-when-defined*
            (run! ',name))
