@@ -237,26 +237,38 @@ REASON-ARGS is provided, is generated based on the form of TEST:
 (defmacro signals (condition-spec
                    &body body)
   "Generates a pass if BODY signals a condition of type
-CONDITION. BODY is evaluated in a block named NIL, CONDITION is
+CONDITION-SPEC. BODY is evaluated in a block named NIL, CONDITION-SPEC is
 not evaluated."
-  (let ((block-name (gensym)))
-    (destructuring-bind (condition &optional reason-control &rest reason-args)
+  (let ((block-name (gensym))
+        (signaled-p (gensym))
+        (body-results (gensym))
+        (tag (gensym)))
+    (destructuring-bind (condition &optional reason-control  reason-args)
         (ensure-list condition-spec)
       `(block ,block-name
-         (handler-bind ((,condition (lambda (c)
-                                      (declare (ignore c))
-                                      ;; ok, body threw condition
-                                      (add-result 'test-passed
-                                                  :test-expr ',condition)
-                                      (return-from ,block-name t))))
-           (block nil
-             ,@body))
-         (process-failure
-           ',condition
-           ,@(if reason-control
-                 `(,reason-control ,@reason-args)
-                 `("Failed to signal a ~S" ',condition)))
-         (return-from ,block-name nil)))))
+        (let ((,signaled-p nil)
+              ,body-results)
+          (setf ,body-results
+                (multiple-value-list
+                 (handler-bind ((,condition (lambda (c)
+                                              ;; ok, body threw condition
+                                              (add-result 'test-passed
+                                                          :test-expr ',condition)
+                                              (setf ,signaled-p t)
+                                              (when (typep c 'warning)
+                                                (muffle-warning c))
+                                              (when (typep c 'error)
+                                                (throw ',tag nil)))))
+                   (catch ',tag
+                    (block nil
+                      ,@body)))))
+          (unless ,signaled-p
+            (process-failure
+             ',condition
+             ,@(if reason-control
+                   `(,reason-control ,@reason-args)
+                   `("Failed to signal a ~S" ',condition))))
+          (return-from ,block-name (values-list ,body-results)))))))
 
 (defmacro finishes (&body body)
   "Generates a pass if BODY executes to normal completion. In
