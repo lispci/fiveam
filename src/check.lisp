@@ -97,14 +97,15 @@ appropriate."))
   initialize args MAKE-INSTANCE-ARGS and add the resulting
   object to the list of test results."
   (with-run-state (result-list current-test)
-    (let ((result (apply #'make-instance result-type
-                         (append make-instance-args (list :test-case current-test)))))
-      (etypecase result
-        (test-passed  (format *test-dribble* "."))
-        (unexpected-test-failure (format *test-dribble* "X"))
-        (test-failure (format *test-dribble* "f"))
-        (test-skipped (format *test-dribble* "s")))
-      (push result result-list))))
+    (when (boundp 'current-test)
+      (let ((result (apply #'make-instance result-type
+                           (append make-instance-args (list :test-case current-test)))))
+        (etypecase result
+          (test-passed  (format *test-dribble* "."))
+          (unexpected-test-failure (format *test-dribble* "X"))
+          (test-failure (format *test-dribble* "f"))
+          (test-skipped (format *test-dribble* "s")))
+        (push result result-list)))))
 
 ;;;; ** The check operators
 
@@ -187,10 +188,14 @@ REASON-ARGS is provided, is generated based on the form of TEST:
                  effective-test test
                  default-reason-args (list "~2&~S~2% was NIL." `',test)))))
       `(let ,bindings
-         (if ,effective-test
-             (add-result 'test-passed :test-expr ',test)
-             (process-failure ',test
-                              ,@(or reason-args default-reason-args)))))))
+         (cond
+           (,effective-test
+            (add-result 'test-passed :test-expr ',test)
+            t)
+           (t
+            (process-failure ',test
+                             ,@(or reason-args default-reason-args))
+            nil))))))
 
 ;;;; *** Other checks
 
