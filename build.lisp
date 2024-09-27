@@ -57,7 +57,7 @@
                 (error #'(lambda (x)
                            (setf *build-error* x)
                            (throw 'build-failed t))))
-   (asdf:load-system "fiveam" :force :all)))
+   (asdf:load-system "fiveam" :force t)))
 
 (cond
   (*build-error*
