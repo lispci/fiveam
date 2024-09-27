@@ -41,6 +41,7 @@ suite named by IN. NB: This macro is built on top of make-suite,
 as such it, like make-suite, will overrwrite any existing suite
 named NAME."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (record-source-file ,name :fiveam-suite)
      (make-suite ',name
                  ,@(when description `(:description ,description))
                  ,@(when in `(:in ',in)))

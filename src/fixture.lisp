@@ -36,6 +36,7 @@ with DEF-FIXTURE is a macro which can use the special macrolet
 See Also: WITH-FIXTURE
 "
   `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (record-source-file ,name :fiveam-fixture)
      (setf (get-fixture ',name) (cons ',args ',body))
      ',name))
 
