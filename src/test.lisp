@@ -29,6 +29,32 @@
   (deletef (%test-names *test*) key)
   (remhash key (%tests *test*)))
 
+(defun rem-tests (key &key test-suite-key test-sym-name)
+  "Remove test(s) identified by `key` from suite identified by `test-suite-key` (or from suite specified
+by `*suite*` if not provided or provided with NIL value). Equality test is EQL by default, and the
+`test-sym-name` keyword argument may be used to override it with string equality (case-insensitive). This
+is convenient in case the test to be removed was added with an uninterned symbol as identity (e.g. by
+mistake). Note that in the case of uninterned symbol, multiple entries could be present in the hash table
+with the same symbol name. This is since each symbol has a different address. This function would remove
+all such entries (hence, the s in the function name)."
+  (labels ((key-string-equal-p (key-in key-iter)
+             "Equality test for key, based on string value (case-insensitive)."
+             (string-equal (string key-in) (string key-iter))))
+    (let* ((test-suite (if test-suite-key
+                           (get-test test-suite-key)
+                           *suite*))
+           (test-bundle (and test-suite (tests test-suite)))
+           (tests-map (and test-bundle (%tests test-bundle)))
+           (result nil))
+      (when tests-map
+        (deletef (%test-names test-bundle) key :test (or (and test-sym-name #'key-string-equal-p) #'eql))
+        (if test-sym-name
+            (loop for k being the hash-keys of tests-map
+                  do (when (key-string-equal-p key k)
+                       (setf result (remhash k tests-map))))
+            (setf result (remhash key tests-map))))
+      result)))
+
 (defun test-names ()
   (reverse (%test-names *test*)))
 
